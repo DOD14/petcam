@@ -11,16 +11,10 @@ import telepot, telepot.loop
 from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
 from time import sleep
 
-def classify_image(filename):
-    image = cv2.imread(filename)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    image = cv2.resize(image, (128, 128))
-    hog_fd = hog(image, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), transform_sqrt=True, block_norm='L2-Hys')
-    return str(model.predict(hog_fd.reshape(1, -1))[0])
+from classifier import Classifier
 
 def now():
     return datetime.now(pytz.timezone(city.timezone))
-
 
 def snap():
     # construct filename
@@ -36,10 +30,10 @@ def snap():
     # decide whether it's day or night and use appropriate raspistill settings
     if now_datetime > sunrise and now_datetime < sunset:
         print('[+] taking normal picture: ' + filename)
-        pic_command = "raspistill -w 320 -h 240 -o " + filename
+        pic_command = "raspistill -w 256 -h 256 -o " + filename
     else:
         print('[+] taking long-exposure picture: ' + filename)
-        pic_command = "raspistill -w 320 -h 240 -ss 100000000 -o " + filename
+        pic_command = "raspistill -w 256 -h 256 -ss 100000000 -o " + filename
     print('[debug] passing command: ' + pic_command)
     os.system(pic_command)
     print('[debug] execution finished')
@@ -128,6 +122,9 @@ def handle(msg):
     else:
         print('[!] sender not on whitelist, dumping message' + "\n" + str(msg))
 
+# instantiate helper classes
+classifier = Classifier()
+
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-c", "--city", required=True, help="city for which sunrise/sunset times are considered")
@@ -168,7 +165,7 @@ telepot.loop.MessageLoop(bot, handle).run_as_thread()
 print('[i] accepting messages from ids: ' + ", ".join(recipients))
 
 # this will run until killed
-# ideally one iteration = one day
+# one iteration = one day
 while True:
     
     print('[+] starting main loop')
@@ -189,7 +186,7 @@ while True:
         filename = snap()
        
         # classify image
-        result = classify_image(filename)
+        result = classifier.classify_image(model=model, img_path=filename, resize_shape=(256, 256))
         print("[i] classification result: " + result)
         
         # if there has been a state change, send a message
