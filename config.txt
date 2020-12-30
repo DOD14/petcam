@@ -1,0 +1,10 @@
+[global]
+resize_shape_h = 256
+resize_shape_w = 256
+
+[training]
+dataset = images
+model_name = model.pkl
+
+[timelapse]
+city = Athens
