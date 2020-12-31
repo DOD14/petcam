@@ -34,3 +34,9 @@ class Classifier:
         result =  model.predict(hog_fd.reshape(1, -1))
 
         return str(result[0])
+
+    def load_model(self, model_path):
+        print('[+] loading classifier model: ' + model_path)
+        with open(model_path, 'rb') as file:
+            model = pickle.load(file)
+            return model

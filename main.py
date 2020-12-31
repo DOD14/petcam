@@ -48,36 +48,21 @@ def snap():
     # return a handle on the new image
     return filename
 
-# tell bot how to handle user messages
-def handle(msg):
-    sender = str(msg['from']['id'])
-    print('[+] handling telegram message from ' + sender + " (first name: " + msg['from']['first_name'] + ")")
-
-    # ignore if not on whitelist 
-    if sender in recipients: 
-        print("[+] message accepted")
-
-        # get basic information about the message and decide on a reply
-        content_type, chat_type, chat_id = telepot.glance(msg)
-        if(content_type=='text'):
-            command = msg['text']
-            print("[+] received message: " + command)
-            
-            # information about the latest snapshot
-            if command == "/update":
-                reply = "[i] last status: " + last_result + " at " + timelapser.last_datetime.strftime("%H:%M:%S")
-                bot.sendMessage(chat_id, reply)
-            
-            # photo on demand
-            elif command == "/photo":
-                if camera_in_use:
-                    bot.sendMessage(chat_id, "[!] camera in use, please wait a few seconds")
-                    while camera_in_use:
-                        sleep(1)
-                bot.sendMessage(chat_id, "[i] taking photo")
-                filename = snap()
-                with open(filename, 'rb') as image:
-                    bot.sendPhoto(chat_id, image)
+    def update(chat_id):
+        # information about the latest snapshot
+        reply = "[i] last status: " + last_result + " at " + timelapser.last_datetime.strftime("%H:%M:%S")
+        telebot.bot.sendMessage(chat_id, reply)
+    
+    def snap_and_send(chat_id):
+        # photo on demand
+        if camera_in_use:
+            telebot.bot.sendMessage(chat_id, "[!] camera in use, please wait a few seconds")
+            while camera_in_use:
+                sleep(1)
+        telebot.bot.sendMessage(chat_id, "[i] taking photo")
+        filename = snap()
+        with open(filename, 'rb') as image:
+            bot.sendPhoto(chat_id, image)
             
             # when was a state last seen? usage: /last state 
             elif command.startswith("/lastseen"):
@@ -129,14 +114,10 @@ config.read(args['config'])
 # instantiate helper classes
 classifier = Classifier()
 timelapser = Timelapser(city=config['timelapse']['city'])
-
-# commence
-started_datetime = timelapser.now()
+telebot = Telebot(config['telebot']['token'], config['telebot']['recipients'].split(","))
 
 # load the trained model
-print("[+] loading classifier model")
-with open(config['classifier']["model"], 'rb') as file:
-    model = pickle.load(file)
+model = classifier.load_model(config['classifier']["model"])
 classes = model.classes_
 
 # dummy state before first photo is classified
@@ -147,14 +128,6 @@ print("[debug] last_seen: " + str(last_seen))
 # avoid overlapping calls to raspistill
 camera_in_use = False
 
-# initialise telegram bot
-bot = telepot.Bot(config['telebot']['token'])
-recipients = config['telebot']['recipients'].split(",")
-print("[+] starting telegram bot")
-telepot.loop.MessageLoop(bot, handle).run_as_thread()
-print('[i] accepting messages from ids: ' + ", ".join(recipients))
-
-# this will run until killed
 # one iteration = one day
 while True:
     
