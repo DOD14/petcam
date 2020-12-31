@@ -165,7 +165,7 @@ while True:
 
     # take photos with today's sunrise/sunset times
     now_datetime = timelapser.now() 
-    while now_datetime.day == timelapser.today_day:
+    while timelapser.now_datetime.day == timelapser.today_day:
         
         # snap photo
         filename = snap()
@@ -185,13 +185,12 @@ while True:
         
         # update our records of what was spotted when
         last_result = result
-        last_seen[result] = now_datetime
+        last_seen[result] = timelapser.last_datetime
 
         # wait between photos
         print('[+] will now sleep ' + str(timelapser.sleep_interval) + " seconds")
         sleep(timelapser.sleep_interval)
         
         # update datetime for next photo
-        now_datetime = timelapser.now() 
-        
+        timelapser.update_last_datetime() 
 
