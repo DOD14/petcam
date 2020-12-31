@@ -12,9 +12,8 @@ from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
 from time import sleep
 
 from classifier import Classifier
+from timelapser import Timelapser
 
-def now():
-    return datetime.now(pytz.timezone(city.timezone))
 
 def snap():
     # construct filename
@@ -28,7 +27,7 @@ def snap():
     camera_in_use = True
     
     # decide whether it's day or night and use appropriate raspistill settings
-    if now_datetime > sunrise and now_datetime < sunset:
+    if timelapser.light_outside(): 
         print('[+] taking normal picture: ' + filename)
         pic_command = "raspistill -w 256 -h 256 -o " + filename
     else:
@@ -66,7 +65,7 @@ def handle(msg):
             
             # information about the latest snapshot
             if command == "/update":
-                reply = "[i] last status: " + last_result + " at " + now_datetime.strftime("%H:%M:%S")
+                reply = "[i] last status: " + last_result + " at " + timelapser.last_datetime.strftime("%H:%M:%S")
                 bot.sendMessage(chat_id, reply)
             
             # photo on demand
@@ -99,12 +98,7 @@ def handle(msg):
 
             # provide basic time/location info for this script run
             elif command == "/info":
-                message = "[i] started script at " + started_datetime.strftime("%H:%M:%S")
-                message += "\nlocation info: " + str(city)
-                message += "\nsunrise time: " + sunrise.strftime("%H:%M:%S")
-                message += "\nsunset time: " + sunset.strftime("%H:%M:%S")
-                message +="\ninterval between snapshots: " + str(sleep_interval) + " seconds"
-                bot.sendMessage(chat_id, message)
+                bot.sendMessage(chat_id, timelapser.dump_properties())
 
             # if command is not recognised
             # send custom keyboard with examples of available commands
@@ -122,27 +116,26 @@ def handle(msg):
     else:
         print('[!] sender not on whitelist, dumping message' + "\n" + str(msg))
 
-# instantiate helper classes
-classifier = Classifier()
 
-# construct the argument parser and parse the arguments
+# use an argument parser to get the config file
 ap = argparse.ArgumentParser()
-ap.add_argument("-c", "--city", required=True, help="city for which sunrise/sunset times are considered")
-ap.add_argument("-m", "--model", required=True, help="path to trained classifier model")
-ap.add_argument("-s",  "--sleep", required=False, help="how long to sleep between snapshots", type = int, default = 300)
-ap.add_argument("-t", "--token", required=True, help="telegram both auth token for sending messages")
-ap.add_argument("-r", "--recipients", required=True, help="comma-separated list of telegram ids to message with updates")
+ap.add_argument("-c", "--config", required=True, help="text file containing various parameters used across petcam scripts")
 args = vars(ap.parse_args())
 
-# get location info for city
-city = astral.geocoder.lookup(args['city'], astral.geocoder.database())
+# get the rest of our settings from the config file
+config = configparser.ConfigParser()
+config.read(args['config'])
+
+# instantiate helper classes
+classifier = Classifier()
+timelapser = Timelapser(city=config['timelapse']['city'])
 
 # commence
-started_datetime = now()
+started_datetime = timelapser.now()
 
 # load the trained model
 print("[+] loading classifier model")
-with open(args["model"], 'rb') as file:
+with open(config['classifier']["model"], 'rb') as file:
     model = pickle.load(file)
 classes = model.classes_
 
@@ -151,15 +144,12 @@ last_result = "unknown"
 last_seen = {key:"unknown" for key in classes}
 print("[debug] last_seen: " + str(last_seen))
 
-# amount to sleep between snapshots
-sleep_interval = args['sleep']
-
 # avoid overlapping calls to raspistill
 camera_in_use = False
 
 # initialise telegram bot
-bot = telepot.Bot(args['token'])
-recipients = args['recipients'].split(",")
+bot = telepot.Bot(config['telebot']['token'])
+recipients = config['telebot']['recipients'].split(",")
 print("[+] starting telegram bot")
 telepot.loop.MessageLoop(bot, handle).run_as_thread()
 print('[i] accepting messages from ids: ' + ", ".join(recipients))
@@ -171,16 +161,11 @@ while True:
     print('[+] starting main loop')
     # find out what day is today so we can get sunrise/sunset times 
     # and update these when the day has changed
-    today_datetime = now() 
-    today_day = today_datetime.day
-    today_sun = astral.sun.sun(city.observer, date = today_datetime, tzinfo=city.timezone)
-    sunrise = today_sun["sunrise"]
-    sunset = today_sun["sunset"]
-    print('[i] location: ' + str(city) + "\n[i] sunrise: " + str(sunrise) + "\n[i] sunset: " + str(sunset))
+    timelapser.update_today_day()
 
     # take photos with today's sunrise/sunset times
-    now_datetime = now() 
-    while now_datetime.day == today_day:
+    now_datetime = timelapser.now() 
+    while now_datetime.day == timelapser.today_day:
         
         # snap photo
         filename = snap()
@@ -203,10 +188,10 @@ while True:
         last_seen[result] = now_datetime
 
         # wait between photos
-        print('[+] will now sleep ' + str(sleep_interval) + " seconds")
-        sleep(sleep_interval)
+        print('[+] will now sleep ' + str(timelapser.sleep_interval) + " seconds")
+        sleep(timelapser.sleep_interval)
         
         # update datetime for next photo
-        now_datetime = now() 
+        now_datetime = timelapser.now() 
         
 
