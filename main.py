@@ -1,5 +1,6 @@
 import argparse
 import astral, astral.geocoder, astral.sun
+import configparser
 import cv2
 from datetime import datetime
 import numpy 
@@ -128,7 +129,7 @@ config.read(args['config'])
 
 # instantiate helper classes
 classifier = Classifier()
-timelapser = Timelapser(city=config['timelapse']['city'])
+timelapser = Timelapser(city=config['timelapse']['city'], sleep_interval=config['timelapse']['sleep'])
 
 # commence
 started_datetime = timelapser.now()
@@ -165,7 +166,7 @@ while True:
 
     # take photos with today's sunrise/sunset times
     now_datetime = timelapser.now() 
-    while timelapser.now_datetime.day == timelapser.today_day:
+    while now_datetime.day == timelapser.today_day:
         
         # snap photo
         filename = snap()
@@ -192,5 +193,4 @@ while True:
         sleep(timelapser.sleep_interval)
         
         # update datetime for next photo
-        timelapser.update_last_datetime() 
-
+        now_datetime = timelapser.now()
