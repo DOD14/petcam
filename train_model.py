@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
 
 # will import a function for convenience but this is unrelated to the trained model
 from classifier import Classifier
@@ -60,7 +60,7 @@ labels = le.fit_transform(labels)
 
 # train the classifier
 print("[+] training  classifier")
-model = SVC(kernel="linear", C=0.025)
+model = LinearSVC()
 model.fit(trainData, trainLabels)
 
 # evaluate the classifier
