@@ -1,10 +1,13 @@
-[global]
+[classifier]
+dataset = images
+model_name = model.pkl
 resize_shape_h = 256
 resize_shape_w = 256
 
-[training]
-dataset = images
-model_name = model.pkl
-
 [timelapse]
-city = Athens
+city = London
+sleep = 300
+
+[telebot]
+token = ***your token here***
+recipients = 0123456789,9876543210,***your recipients here***

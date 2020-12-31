@@ -18,7 +18,7 @@ config.read('config.txt')
 print("[+] read config file")
 
 # get the folders corresponding to the classes
-folders = [directory for directory in Path(config['training']['dataset']).iterdir() if directory.is_dir()]
+folders = [directory for directory in Path(config['classifier']['dataset']).iterdir() if directory.is_dir()]
 folders_len = len(folders)
 
 # initialise lists
@@ -44,7 +44,7 @@ for i, direc in enumerate(folders):
         print('[progress] ' + label + " (" +str(i+1) + "/" + str(folders_len)+ "): " + str(j+1) + "/" + str(images_len), end="\r")
      
         # append HOG feature descriptor and image label to data
-        hog_fd = classifier.extract_hog_fd(str(imagePath), (int(config['global']['resize_shape_h']), int(config['global']['resize_shape_w'])))
+        hog_fd = classifier.extract_hog_fd(str(imagePath), (int(config['classifier']['resize_shape_h']), int(config['classifier']['resize_shape_w'])))
         data.append(hog_fd)
         labels.append(label)
     
@@ -85,5 +85,5 @@ print("[i] model classes: " + str(model.classes_))
 
 # save the model with pickle
 print("[+] saving model")
-with open(config['training']['model_name'], 'wb') as file:
+with open(config['classifier']['model_name'], 'wb') as file:
     pickle.dump(model, file)
