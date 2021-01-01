@@ -10,8 +10,10 @@ class Tracker:
 
     def check_state_change(self, result, result_time):
         # update our records of what was spotted when
-        tracker.last_seen[result] = result_time
-        if tracker.last_result != result:
+        self.last_seen[result] = result_time
+        if self.last_result != result:
+            message = "[!] update: " + self.last_result + " -> " + result
             self.last_result = result
-            return True
-        else return False
+            return message
+        else:
+            return None

@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pickle
 from skimage.feature import hog
 
 class Classifier:
@@ -11,6 +12,8 @@ class Classifier:
 
     def extract_hog_fd(self, img_path, resize_shape):
         """Loads an image from path img_path, applies some pre-processing including resizing to shape resize_shape, and returns its HOG feature descriptor."""
+        
+        print('[+] extracting HOG feature descriptor')
 
         # load image
         img = cv2.imread(img_path)
@@ -29,6 +32,8 @@ class Classifier:
     def classify_image(self, img_path, resize_shape):
         "Takes a sklearn-trained model and uses it to classify the image located at img_path; note that pre-processing requires resizing to resize_shape."
         
+        print('[+] preparing to classify image: ' + img_path)
+
         # get HOG feature vector
         hog_fd = self.extract_hog_fd(img_path, resize_shape)
         

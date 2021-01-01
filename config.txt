@@ -6,8 +6,8 @@ resize_shape_w = 256
 
 [petcam]
 save_dir = photos
-day_snap_cmd = "raspistill -w 256 -h 256 -o "
-night_snap_cmd = "raspistill -w 256 -h 256 -ss 100000 -o "
+day_snap_cmd = raspistill -w 256 -h 256 -o 
+night_snap_cmd = raspistill -w 256 -h 256 -ss 100000 -o 
 
 
 [telebot]

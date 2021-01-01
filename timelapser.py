@@ -6,14 +6,16 @@ from time import sleep
 class Timelapser:
 
     def __init__(self, city, sleep_interval):
-        
+        print('[+] initialised timelapser instance')
+
         # once we know where we are we can get the currrnt time in the local timezone
         self.city = astral.geocoder.lookup(city, astral.geocoder.database())
-        self.start_time = self.now()
-        
-        # set how long to sleep between events
-        self.sleep_interval = sleep_interval
+        self.start_time = self.last_datetime = self.now()
+        self.update_sun()
 
+        # set how long to sleep between events
+        self.sleep_interval = int(sleep_interval)
+        
     def now(self):
         return datetime.now(pytz.timezone(self.city.timezone))
     
@@ -26,15 +28,15 @@ class Timelapser:
         self.sunrise = today_sun["sunrise"]
         self.sunset = today_sun["sunset"]
 
-    def light_outside(self, date):
-        if date > sunrise and date < sunset:
+    def light_outside(self):
+        if self.last_datetime > self.sunrise and self.last_datetime < self.sunset:
             return True
         else:
             return False
     
     def loop(self, function):
         while True: # one iteration per day
-            print('[+] starting timelapser loop')
+            print('\t[+] starting timelapser loop')
             
             self.today = self.now().day
             self.update_sun()
@@ -45,7 +47,7 @@ class Timelapser:
                 function()
 
                 # take a break
-                print('[+] will now sleep ' + str(self.sleep_interval))
+                print('\t[+] will now sleep ' + str(self.sleep_interval))
                 sleep(self.sleep_interval)
 
                 # update last_datetime to check if a new day has started
