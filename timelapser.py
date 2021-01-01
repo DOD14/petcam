@@ -7,7 +7,7 @@ class Timelapser:
 
     def __init__(self, city, sleep_interval):
         # set how long to sleep between events
-        self.sleep_interval = sleep_interval
+        self.sleep_interval = int(sleep_interval)
         
         # once we know where we are we can get the currrnt time in the local timezone
         self.city = astral.geocoder.lookup(city, astral.geocoder.database())
@@ -27,7 +27,7 @@ class Timelapser:
         return datetime.now(pytz.timezone(self.city.timezone))
 
     def light_outside(self):
-        if now_datetime > sunrise and now_datetime < sunset:
+        if self.last_datetime > self.sunrise and self.last_datetime < self.sunset:
             return True
         else:
             return False
