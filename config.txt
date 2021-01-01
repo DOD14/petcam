@@ -1,13 +1,20 @@
 [classifier]
 dataset = images
-model_name = model.pkl
+model_path = model.pkl
 resize_shape_h = 256
 resize_shape_w = 256
+
+[petcam]
+save_dir = photos
+day_snap_cmd = "raspistill -w 256 -h 256 -o "
+night_snap_cmd = "raspistill -w 256 -h 256 -ss 100000 -o "
+
+
+[telebot]
+token = ***your token here***
+recipients = 0123456789,9876543210,***your recipients here***
 
 [timelapse]
 city = London
 sleep = 300
 
-[telebot]
-token = ***your token here***
-recipients = 0123456789,9876543210,***your recipients here***

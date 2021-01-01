@@ -16,7 +16,10 @@ class Timelapser:
 
     def now(self):
         return datetime.now(pytz.timezone(self.city.timezone))
-
+    
+    def get_last_timestamp(self):
+        return str(self.last_datetime).replace(" ", "-")
+    
     def update_sun(self):
         # make a note of when the sun rises/sets
         today_sun = astral.sun.sun(self.city.observer, date = self.now(), tzinfo=self.city.timezone)
@@ -42,16 +45,9 @@ class Timelapser:
                 function()
 
                 # take a break
+                print('[+] will now sleep ' + str(self.sleep_interval))
                 sleep(self.sleep_interval)
 
                 # update last_datetime to check if a new day has started
                 self.last_datetime = self.now()
 
-    def dump_properties(self):
-        dump = '[+] initialised timelapser instance at ' + self.start_time.strftime('%H:%M:%S')
-        dump += '[i] location: ' + str(self.city)
-        dump += '[i] today: ' + str(self.today)
-        dump += "[i] sunrise: " + str(self.sunrise)
-        dump += "[i] sunset: " + str(self.sunset)
-        dump += "[i] sleep interval: " + str(self.sleep_interval) + " seconds"
-        return dump
