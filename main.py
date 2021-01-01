@@ -48,58 +48,57 @@ def snap():
     # return a handle on the new image
     return filename
 
-    def update(chat_id):
-        # information about the latest snapshot
-        reply = "[i] last status: " + last_result + " at " + timelapser.last_datetime.strftime("%H:%M:%S")
-        telebot.bot.sendMessage(chat_id, reply)
-    
-    def snap_and_send(chat_id):
-        # photo on demand
-        if camera_in_use:
-            telebot.bot.sendMessage(chat_id, "[!] camera in use, please wait a few seconds")
-            while camera_in_use:
-                sleep(1)
-        telebot.bot.sendMessage(chat_id, "[i] taking photo")
-        filename = snap()
-        with open(filename, 'rb') as image:
-            bot.sendPhoto(chat_id, image)
-            
-            # when was a state last seen? usage: /last state 
-            elif command.startswith("/lastseen"):
-                state  = command.split(" ")[1]
-                result = last_seen[state]
-                if result == "unknown":
-                    reply = "[i] not yet seen, please try again later"
-                elif type(result) == datetime:
-                    reply = "[i] last saw " + state + " at " + result.strftime("%H:%M:%S")
-                else: 
-                    reply = "[!] invalid class provided, please use /classes to see available classes"
-                bot.sendMessage(chat_id, reply)
+def update(chat_id):
+    # information about the latest snapshot
+    reply = "[i] last status: " + last_result + " at " + timelapser.last_datetime.strftime("%H:%M:%S")
+    telebot.bot.sendMessage(chat_id, reply)
 
-            # list available classes
-            elif command == "/classes":
-                message = "[i] available classes for use with /last command: " + ", ".join(classes)
-                bot.sendMessage(chat_id, message)
+def snap_and_send(chat_id):
+    # photo on demand
+    if camera_in_use:
+        telebot.bot.sendMessage(chat_id, "[!] camera in use, please wait a few seconds")
+        while camera_in_use:
+            sleep(1)
+    telebot.bot.sendMessage(chat_id, "[i] taking photo")
+    filename = snap()
+    with open(filename, 'rb') as image:
+        bot.sendPhoto(chat_id, image)
+        
+def report_last_seen(chat_id, state):        
+    # when was a state last seen? usage: /last state 
+    result = last_seen[state]
+    if result == "unknown":
+        reply = "[i] not yet seen, please try again later"
+    elif type(result) == datetime:
+        reply = "[i] last saw " + state + " at " + result.strftime("%H:%M:%S")
+    else: 
+        reply = "[!] invalid class provided, please use /classes to see available classes"
+    telebot.bot.sendMessage(chat_id, reply)
 
-            # provide basic time/location info for this script run
-            elif command == "/info":
-                bot.sendMessage(chat_id, timelapser.dump_properties())
 
-            # if command is not recognised
-            # send custom keyboard with examples of available commands
-            else:
-                bot.sendMessage(chat_id, "[i] available commands:", 
-                    reply_markup=ReplyKeyboardMarkup(
-                                keyboard=[[
-                                    KeyboardButton(text="/update"),
-                                    KeyboardButton(text="/info"),
-                                    KeyboardButton(text="/photo"),
-                                    KeyboardButton(text="/classes"),
-                                    KeyboardButton(text="/lastseen [class]")
-                                    ]]
-                            ))
-    else:
-        print('[!] sender not on whitelist, dumping message' + "\n" + str(msg))
+def list_classes(chat_id):
+    message = "[i] available classes for use with /last command: " + ", ".join(classes)
+    bot.sendMessage(chat_id, message)
+
+def dump_info(chat_id):
+    # provide basic time/location info for this script run
+     bot.sendMessage(chat_id, timelapser.dump_properties())
+
+def default_reply(chat_id):
+    # if command is not recognised
+    # send custom keyboard with examples of available commands
+    bot.sendMessage(chat_id, "[i] available commands:", 
+        reply_markup=ReplyKeyboardMarkup(
+                    keyboard=[[
+                        KeyboardButton(text="/update"),
+                        KeyboardButton(text="/info"),
+                        KeyboardButton(text="/photo"),
+                        KeyboardButton(text="/classes"),
+                        KeyboardButton(text="/lastseen [class]")
+                        ]]
+                ))
+else:
+    print('[!] sender not on whitelist, dumping message' + "\n" + str(msg))
 
 
 # use an argument parser to get the config file
