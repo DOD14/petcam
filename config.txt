@@ -8,7 +8,8 @@ resize_shape_w = 256
 save_dir = photos
 day_snap_cmd = raspistill -w 256 -h 256 -o 
 night_snap_cmd = raspistill -w 256 -h 256 -ss 100000 -o 
-
+brightness_threshold = 80
+brighten_factor = 5.0
 
 [telebot]
 token = ***your token here***

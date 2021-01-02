@@ -9,7 +9,7 @@ class Telebot:
         self.bot = telepot.Bot(token)
         self.recipients = recipients
         print('\t[i] accepting messages from ids: ' + ", ".join(self.recipients))
-        
+       
         self.classifier = classifier
         self.petcam = petcam
         self.timelapser = timelapser
@@ -95,7 +95,7 @@ class Telebot:
             result = self.tracker.last_seen[state]
             if result == "unknown":
                 reply = "[i] not yet seen, please try again later"
-            elif type(result) == datetime:
+            else:
                 reply = "[i] last saw " + state + " at " + result.strftime("%H:%M:%S")
         except KeyError:
             reply = "[!] invalid class provided, please use /classes to see available classes"
@@ -110,7 +110,7 @@ class Telebot:
     def dump_info(self, chat_id):
         # provide basic time/location info for this script run
         message = str(self.__dict__)
-        for helper in [self.classifier, self.petcam, self.timelapser, self.tracker]:
+        for helper in [self.petcam, self.timelapser, self.tracker]:
              message += "\n" + str(helper.__dict__)
 
         self.bot.sendMessage(chat_id, message)

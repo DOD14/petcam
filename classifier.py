@@ -10,7 +10,6 @@ class Classifier:
         
         if model_path != None:
             self.model = self.load_model(model_path)
-            # is saving the classes necessary? tracker also saves these
             self.classes = self.model.classes_
 
     def extract_hog_fd(self, img_path, resize_shape):
