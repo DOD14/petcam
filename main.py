@@ -43,15 +43,16 @@ petcam = Petcam(save_dir = config['petcam']['save_dir'],
         brightness_threshold = float(config['petcam']['brightness_threshold']),
         brighten_factor = float(config['petcam']['brighten_factor'])
         )
-timelapser = Timelapser(city = config['timelapse']['city'],
-        sleep_interval = config['timelapse']['sleep'])
+timelapser = Timelapser(city = config['timelapser']['city'],
+        sleep_interval = config['timelapser']['sleep_interval'],
+        loop_func = snap_check_update)
 tracker = Tracker(classes = classifier.classes)
 telebot = Telebot(token = config['telebot']['token'], 
         recipients = config['telebot']['recipients'].split(","),
-        classifier = classifier,
-        petcam = petcam,
-        timelapser = timelapser,
-        tracker = tracker)
+        helpers = {'classifier': classifier,
+            'petcam': petcam,
+            'timelapser': timelapser,
+            'tracker': tracker
+            }
+        )
 
-# enter main loop
-timelapser.loop(snap_check_update)

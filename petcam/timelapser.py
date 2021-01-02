@@ -5,7 +5,7 @@ from time import sleep
 
 class Timelapser:
 
-    def __init__(self, city, sleep_interval):
+    def __init__(self, city, sleep_interval, loop_func):
 
         print('\t[+] initialised timelapser instance')
 
@@ -16,7 +16,11 @@ class Timelapser:
         # so we know if there's light outside
         self.update_sun()
 
-        # set how long to sleep between events
+        # function to run inside loop()
+        self.loop_func = loop_func
+        self.loop_running = False
+
+        # set how long to sleep between calls to loop_func
         self.sleep_interval = int(sleep_interval)
         
     def now(self):
@@ -41,12 +45,13 @@ class Timelapser:
         else:
             return False
     
-    def loop(self, function):
+    def loop(self):
         """The main purpose of this class: runs a given function in a loop, but keeping track of day and night for camera setup and image processing purposes."""
         print('\t[+] starting timelapser loop')
- 
+        self.loop_running = True
+
         # one iteration per day
-        while True: 
+        while self.loop_running: 
             print("\t[+] it's a new day")
 
             # update the day and the sunrise/sunset times
@@ -60,7 +65,7 @@ class Timelapser:
             while self.last_datetime.day == self.today:                 
                 
                 # do custom stuff! 
-                function()
+                self.loop_func()
 
                 # take a break
                 print('\t[+] will now sleep ' + str(self.sleep_interval))

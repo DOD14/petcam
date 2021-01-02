@@ -3,7 +3,7 @@ from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
 
 class Telebot:
 
-    def __init__(self, token, recipients, classifier, petcam, timelapser, tracker):
+    def __init__(self, token, recipients, helpers):
         print('[+] initialised telebot instance')
        
         # initialise a Telegram bot with given token
@@ -14,18 +14,19 @@ class Telebot:
         print('\t[i] accepting messages from ids: ' + ", ".join(self.recipients))
        
         # get a handle on helper classes 
-        self.classifier = classifier
-        self.petcam = petcam
-        self.timelapser = timelapser
-        self.tracker = tracker
+        self.helpers = helpers
 
         # each command keyword corresponds to a function
-        self.cmd_dict = { "/update": self.status_update, 
+        self.cmd_dict = { "/start": self.toggle_timelapser_loop,
+                "/update": self.status_update, 
                 "/info": self.dump_info,
                 "/photo": self.snap_and_send,
                 "/classes": self.list_classes,
                 "/lastseen": self.report_last_seen,
-                "/help": self.default_reply }
+                "/help": self.default_reply,
+                "/stop": self.toggle_timelapser_loop,
+                "/exit": self.exit_main
+                }
         
         # construct a custom keyboard from our list of commands
         # then the user just has to press  buttons
@@ -37,6 +38,20 @@ class Telebot:
         # start listening for incoming messages
         telepot.loop.MessageLoop(self.bot, self.handle_msg).run_as_thread()
     
+    def toggle_timelapser_loop(self, chat_id):
+        if self.helpers['timelapser'].loop_running:
+            msg = '[+] stopping main loop'
+            self.helpers['timelapser'].loop_running = False
+        else: 
+            msg = '[+] starting main loop'
+            self.helpers['timelapser'].loop()
+        bot.update_recipients(message=msg)
+
+    
+    def exit_main(self, chat_id):
+        msg = '[+] stopping script execution'
+        self.update_recipients(message=msg)
+        exit()
 
     def update_recipients(self, message='message empty error', img_path=''):
         """Send a message (optionally an image) to every recipient in turn."""
@@ -99,7 +114,7 @@ class Telebot:
     def status_update(self, chat_id):
         """Messages information about the latest snapshot."""
 
-        reply = "[i] last status: " + self.tracker.last_state + " at " + self.timelapser.last_datetime.strftime("%H:%M:%S")
+        reply = "[i] last status: " + self.helpers['tracker'].last_state + " at " + self.helpers['timelapser'].last_datetime.strftime("%H:%M:%S")
         self.bot.sendMessage(chat_id, reply)
 
     def snap_and_send(self, chat_id):
@@ -107,7 +122,7 @@ class Telebot:
         self.bot.sendMessage(chat_id, "[i] taking photo")
 
         # timestamp is now rather than latest to avoid overwrites
-        filename = self.petcam.snap(self.timelapser.now())
+        filename = self.helpers['petcam'].snap(self.helpers['timelapser'].now())
 
         # open image and send
         with open(filename, 'rb') as image:
@@ -118,7 +133,7 @@ class Telebot:
         
         try:
             # find out from tracker when a state was last spotted 
-            lastseen_datetime = self.tracker.last_seen[state]
+            lastseen_datetime = self.helpers['tracker'].last_seen[state]
             
             # could be unknown if we've just started
             if lastseen_datetime == "unknown":
@@ -139,7 +154,7 @@ class Telebot:
     def list_classes(self, chat_id):
         """Messages user with a list of classifier classes."""
 
-        message = "[i] available classes for use with /lastseen command: " + ", ".join(self.classifier.classes)
+        message = "[i] available classes for use with /lastseen command: " + ", ".join(self.helpers['classifier'].classes)
         self.bot.sendMessage(chat_id, message)
 
 
@@ -147,7 +162,7 @@ class Telebot:
         """Debug: dumps the __dict__ of every helper class."""
 
         message = str(self.__dict__)
-        for helper in [self.classiifer, self.petcam, self.timelapser, self.tracker]:
+        for helper in [value in self.helpers]: 
              message += "\n" + str(helper.__dict__)
 
         self.bot.sendMessage(chat_id, message)
