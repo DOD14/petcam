@@ -7,7 +7,7 @@ class Timelapser:
 
     def __init__(self, city, sleep_interval):
 
-        print('[+] initialised timelapser instance')
+        print('\t[+] initialised timelapser instance')
 
         # once we know where we are we can get the currrnt time in the local timezone
         self.city = astral.geocoder.lookup(city, astral.geocoder.database())
@@ -47,7 +47,7 @@ class Timelapser:
  
         # one iteration per day
         while True: 
-            print("[+] it's a new day")
+            print("\t[+] it's a new day")
 
             # update the day and the sunrise/sunset times
             self.today = self.now().day
