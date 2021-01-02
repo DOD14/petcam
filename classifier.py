@@ -5,16 +5,17 @@ from skimage.feature import hog
 
 class Classifier:
 
-    def __init__(self, model_path):
+    def __init__(self, model_path=None):
         print('[+] initialised classifier instance')
-        self.model = self.load_model(model_path)
-        self.classes = self.model.classes_
+        
+        if model_path != None:
+            self.model = self.load_model(model_path)
+            # is saving the classes necessary? tracker also saves these
+            self.classes = self.model.classes_
 
     def extract_hog_fd(self, img_path, resize_shape):
         """Loads an image from path img_path, applies some pre-processing including resizing to shape resize_shape, and returns its HOG feature descriptor."""
         
-        print('[+] extracting HOG feature descriptor')
-
         # load image
         img = cv2.imread(img_path)
 

@@ -85,5 +85,5 @@ print("[i] model classes: " + str(model.classes_))
 
 # save the model with pickle
 print("[+] saving model")
-with open(config['classifier']['model_name'], 'wb') as file:
+with open(config['classifier']['model_path'], 'wb') as file:
     pickle.dump(model, file)
