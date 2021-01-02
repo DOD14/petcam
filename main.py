@@ -1,11 +1,11 @@
 import argparse
 import configparser
 
-from classifier import Classifier
-from petcam import Petcam
-from telebot import Telebot
-from timelapser import Timelapser
-from tracker import Tracker
+from petcam.classifier import Classifier
+from petcam.petcam import Petcam
+from petcam.telebot import Telebot
+from petcam.timelapser import Timelapser
+from petcam.tracker import Tracker
 
 def snap_check_update():        
    
