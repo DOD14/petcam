@@ -1,15 +1,20 @@
 import cv2
 import numpy as np
+import pickle
 from skimage.feature import hog
 
 class Classifier:
 
-    def __init__(self):
-        print('[+] initalised classifier instance')
+    def __init__(self, model_path=None):
+        print('[+] initialised classifier instance')
+        
+        if model_path != None:
+            self.model = self.load_model(model_path)
+            self.classes = self.model.classes_
 
     def extract_hog_fd(self, img_path, resize_shape):
         """Loads an image from path img_path, applies some pre-processing including resizing to shape resize_shape, and returns its HOG feature descriptor."""
-
+        
         # load image
         img = cv2.imread(img_path)
 
@@ -24,13 +29,21 @@ class Classifier:
 
         return hog_fd 
 
-    def classify_image(self, model, img_path, resize_shape):
+    def classify_image(self, img_path, resize_shape):
         "Takes a sklearn-trained model and uses it to classify the image located at img_path; note that pre-processing requires resizing to resize_shape."
         
+        print('[+] preparing to classify image: ' + img_path)
+
         # get HOG feature vector
         hog_fd = self.extract_hog_fd(img_path, resize_shape)
         
         # get prediction from model
-        result =  model.predict(hog_fd.reshape(1, -1))
+        result =  str(self.model.predict(hog_fd.reshape(1, -1))[0])
+        print('[+] classification result: ' + result)
+        return result
 
-        return str(result[0])
+    def load_model(self, model_path):
+        print('[+] loading classifier model: ' + model_path)
+        with open(model_path, 'rb') as file:
+            model = pickle.load(file)
+            return model

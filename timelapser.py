@@ -6,25 +6,28 @@ from time import sleep
 class Timelapser:
 
     def __init__(self, city, sleep_interval):
+
+        print('[+] initialised timelapser instance')
+
+        # once we know where we are we can get the currrnt time in the local timezone
+        self.city = astral.geocoder.lookup(city, astral.geocoder.database())
+        self.start_time = self.last_datetime = self.now()
+        self.update_sun()
+
         # set how long to sleep between events
         self.sleep_interval = int(sleep_interval)
         
-        # once we know where we are we can get the currrnt time in the local timezone
-        self.city = astral.geocoder.lookup(city, astral.geocoder.database())
-        self.start_time = self.now()
-        self.update_last_datetime()
-
-        # keep track of what day it is so we update sunrise/sunset times at midnight
-        self.update_today_day()
-
-        # make a note of when the sun rises/sets
-        today_sun = astral.sun.sun(self.city.observer, date = self.start_time, tzinfo=self.city.timezone)
-        self.sunrise = today_sun["sunrise"]
-        self.sunset = today_sun["sunset"]
-        
-
     def now(self):
         return datetime.now(pytz.timezone(self.city.timezone))
+    
+    def get_last_timestamp(self):
+        return str(self.last_datetime).replace(" ", "-")
+    
+    def update_sun(self):
+        # make a note of when the sun rises/sets
+        today_sun = astral.sun.sun(self.city.observer, date = self.now(), tzinfo=self.city.timezone)
+        self.sunrise = today_sun["sunrise"]
+        self.sunset = today_sun["sunset"]
 
     def light_outside(self):
         if self.last_datetime > self.sunrise and self.last_datetime < self.sunset:
@@ -32,16 +35,22 @@ class Timelapser:
         else:
             return False
     
-    def update_today_day(self):
-        self.today_day = self.now().day
+    def loop(self, function):
+        while True: # one iteration per day
+            print('\t[+] starting timelapser loop')
+            
+            self.today = self.now().day
+            self.update_sun()
+            
+            self.last_datetime = self.now()
+            while self.last_datetime.day == self.today: # as many iterations in a day as sleep_interval allows
+                # do stuff
+                function()
 
-    def update_last_datetime(self):
-        self.last_datetime = self.now()
+                # take a break
+                print('\t[+] will now sleep ' + str(self.sleep_interval))
+                sleep(self.sleep_interval)
 
-    def dump_properties(self):
-        dump = '[+] initialised timelapser instance at ' + self.start_time.strftime('%H:%M:%S')
-        dump += '[i] location: ' + str(self.city)
-        dump += "[i] sunrise: " + str(self.sunrise)
-        dump += "[i] sunset: " + str(self.sunset)
-        dump += "[i] sleep interval: " + str(self.sleep_interval) + " seconds"
-        return dump
+                # update last_datetime to check if a new day has started
+                self.last_datetime = self.now()
+
