@@ -31,8 +31,8 @@ class Telebot:
         # then the user just has to press  buttons
         keyboard_buttons = []
         for cmd in self.cmd_dict.keys():
-            keyboard_buttons.append(KeyboardButton(text=cmd))
-        self.keyboard = ReplyKeyboardMarkup(keyboard=[keyboard_buttons])
+            keyboard_buttons.append([KeyboardButton(text=cmd)])
+        self.keyboard = ReplyKeyboardMarkup(keyboard=keyboard_buttons)
 
         # start listening for incoming messages
         telepot.loop.MessageLoop(self.bot, self.handle_msg).run_as_thread()
