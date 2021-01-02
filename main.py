@@ -37,20 +37,15 @@ config.read(args['config'])
 
 # instantiate helper classes
 classifier = Classifier(model_path = config['classifier']['model_path'])
-
 petcam = Petcam(save_dir = config['petcam']['save_dir'],
         day_snap_cmd = config['petcam']['day_snap_cmd'], 
         night_snap_cmd = config['petcam']['night_snap_cmd'],
         brightness_threshold = float(config['petcam']['brightness_threshold']),
         brighten_factor = float(config['petcam']['brighten_factor'])
         )
-
 timelapser = Timelapser(city = config['timelapse']['city'],
         sleep_interval = config['timelapse']['sleep'])
-
 tracker = Tracker(classes = classifier.classes)
-
-# the bot needs to keep track of everything to be useful
 telebot = Telebot(token = config['telebot']['token'], 
         recipients = config['telebot']['recipients'].split(","),
         classifier = classifier,
