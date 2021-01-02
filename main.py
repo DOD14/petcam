@@ -60,4 +60,3 @@ telebot = Telebot(token = config['telebot']['token'],
 
 # enter main loop
 timelapser.loop(snap_check_update)
-

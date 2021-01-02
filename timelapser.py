@@ -6,6 +6,7 @@ from time import sleep
 class Timelapser:
 
     def __init__(self, city, sleep_interval):
+
         print('[+] initialised timelapser instance')
 
         # once we know where we are we can get the currrnt time in the local timezone
