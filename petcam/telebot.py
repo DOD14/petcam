@@ -185,6 +185,7 @@ class Telebot:
     def report_last_seen(self, chat_id, state="dummy"):
         """When was a state last seen? usage: /lastseen state"""
         
+        keyboard = self.keyboard
         try:
             # find out from tracker when a state was last spotted 
             lastseen_datetime = self.helpers['tracker'].last_seen[state]
@@ -199,10 +200,14 @@ class Telebot:
         
         # this can happen if the class is not in tracker's dict
         except KeyError:
-            reply = "[!] invalid class provided, please use /classes to see available classes"
+            reply = "[!] invalid class provided"
+
+            # construct keyboard with available classes
+            buttons = [[KeyboardButton(text='/lastseen ' + state)] for state in self.helpers['classifier'].classes]
+            keyboard = ReplyKeyboardMarkup(keyboard=buttons)
         
         # send the appropriate reply
-        self.bot.sendMessage(chat_id, reply)
+        self.bot.sendMessage(chat_id, reply, reply_markup=keyboard)
 
 
     def list_classes(self, chat_id):
