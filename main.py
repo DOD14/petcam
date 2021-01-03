@@ -1,5 +1,6 @@
 import argparse
 import configparser
+from time import sleep
 
 from petcam.classifier import Classifier
 from petcam.petcam import Petcam
@@ -8,9 +9,11 @@ from petcam.timelapser import Timelapser
 from petcam.tracker import Tracker
 
 def snap_check_update():        
-   
+    
+    print('[+] in function snap_check_update')
+
     # snap photo with timestamp
-    filename =  petcam.snap(timelapser.get_last_timestamp(), 
+    filename =  petcam.snap(timelapser.last_datetime, 
             timelapser.light_outside())
    
     # classify image
@@ -43,15 +46,18 @@ petcam = Petcam(save_dir = config['petcam']['save_dir'],
         brightness_threshold = float(config['petcam']['brightness_threshold']),
         brighten_factor = float(config['petcam']['brighten_factor'])
         )
-timelapser = Timelapser(city = config['timelapse']['city'],
-        sleep_interval = config['timelapse']['sleep'])
+timelapser = Timelapser(city = config['timelapser']['city'],
+        sleep_interval = config['timelapser']['sleep_interval'],
+        loop_func = snap_check_update)
 tracker = Tracker(classes = classifier.classes)
 telebot = Telebot(token = config['telebot']['token'], 
         recipients = config['telebot']['recipients'].split(","),
-        classifier = classifier,
-        petcam = petcam,
-        timelapser = timelapser,
-        tracker = tracker)
+        helpers = {'classifier': classifier,
+            'petcam': petcam,
+            'timelapser': timelapser,
+            'tracker': tracker
+            }
+        )
 
-# enter main loop
-timelapser.loop(snap_check_update)
+while True:
+    sleep(10)

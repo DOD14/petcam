@@ -1,10 +1,11 @@
 import telepot, telepot.loop
 from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
+import threading
 
 class Telebot:
 
-    def __init__(self, token, recipients, classifier, petcam, timelapser, tracker):
-        print('[+] initialised telebot instance')
+    def __init__(self, token, recipients, helpers):
+        print('\t[+] initialised telebot instance')
        
         # initialise a Telegram bot with given token
         self.bot = telepot.Bot(token)
@@ -14,18 +15,20 @@ class Telebot:
         print('\t[i] accepting messages from ids: ' + ", ".join(self.recipients))
        
         # get a handle on helper classes 
-        self.classifier = classifier
-        self.petcam = petcam
-        self.timelapser = timelapser
-        self.tracker = tracker
+        self.helpers = helpers
 
         # each command keyword corresponds to a function
-        self.cmd_dict = { "/update": self.status_update, 
-                "/info": self.dump_info,
+        self.cmd_dict = { "/loop": self.toggle_timelapser_loop,
+                "/update": self.status_update, 
                 "/photo": self.snap_and_send,
+                "/lastsnap": self.send_last_snap,
                 "/classes": self.list_classes,
                 "/lastseen": self.report_last_seen,
-                "/help": self.default_reply }
+                "/help": self.default_reply,
+                "/debug": self.dump_info,
+                "/stop": self.toggle_timelapser_loop,
+                "/shutdown": self.shutdown_now
+                }
         
         # construct a custom keyboard from our list of commands
         # then the user just has to press  buttons
@@ -33,12 +36,52 @@ class Telebot:
         for cmd in self.cmd_dict.keys():
             keyboard_buttons.append([KeyboardButton(text=cmd)])
         self.keyboard = ReplyKeyboardMarkup(keyboard=keyboard_buttons)
+        
+        # let everyone now bot is up and running
+        msg = '[+] bot activated! use /loop to begin tracking'
+        self.update_recipients(message=msg)
 
         # start listening for incoming messages
         telepot.loop.MessageLoop(self.bot, self.handle_msg).run_as_thread()
+        
+
+    def toggle_timelapser_loop(self, chat_id):
+        """Start/stop timelapser loop."""
+        if self.helpers['timelapser'].loop_running:
+            msg = '[+] stopping main loop'
+            self.helpers['timelapser'].loop_running = False
+        else: 
+            msg = '[+] starting main loop'
+            threading.Thread(target=self.helpers['timelapser'].loop).start()
+
+        self.update_recipients(message=msg)
+
+    
+    def send_last_snap(self, chat_id):
+        """Retrieves and sends the latest snapshot."""
+
+        # get latest snapshot filename
+        filename = self.helpers['petcam'].last_snap
+        
+        # could be None if we've just started
+        if filename == None:
+            msg = '[i] no photos taken yet, please try again later or request a new /photo'
+            self.bot.sendMessage(chat_id, msg)
+            return
+
+        # open iamge and send
+        with open(filename, 'rb') as img:
+            msg = '[i] ' + str(filename)
+            self.bot.sendImage(chat_id, img, caption=msg)
     
 
-    def update_recipients(self, message='message empty error', img_path=''):
+    def shutdown_now(self, chat_id):
+        """Shuts down device immediately."""
+        msg = '[+] shutting down... bye!'
+        self.update_recipients(message=msg)
+        os.system('sudo shutdown now')
+
+    def update_recipients(self, message='[!] message empty error', img_path=''):
         """Send a message (optionally an image) to every recipient in turn."""
         print('\t[+] preparing to send message to all recipients:')
         print("\t" + message)
@@ -52,7 +95,7 @@ class Telebot:
                 self.bot.sendMessage(rec, message)
             
             # if an image path is supplied, load the image and send
-            # yes we need to open the image for each sned - known issue
+            # yes we need to open the image for each sendd - known issue
             else:
                 with open(img_path, 'rb') as image:
                     self.bot.sendPhoto(rec, image, caption=message)
@@ -99,7 +142,7 @@ class Telebot:
     def status_update(self, chat_id):
         """Messages information about the latest snapshot."""
 
-        reply = "[i] last status: " + self.tracker.last_state + " at " + self.timelapser.last_datetime.strftime("%H:%M:%S")
+        reply = "[i] last status: " + self.helpers['tracker'].last_state + " at " + self.helpers['timelapser'].last_datetime.strftime("%H:%M:%S")
         self.bot.sendMessage(chat_id, reply)
 
     def snap_and_send(self, chat_id):
@@ -107,7 +150,7 @@ class Telebot:
         self.bot.sendMessage(chat_id, "[i] taking photo")
 
         # timestamp is now rather than latest to avoid overwrites
-        filename = self.petcam.snap(self.timelapser.now())
+        filename = self.helpers['petcam'].snap(self.helpers['timelapser'].now(), self.helpers['timelapser'].light_outside())
 
         # open image and send
         with open(filename, 'rb') as image:
@@ -118,7 +161,7 @@ class Telebot:
         
         try:
             # find out from tracker when a state was last spotted 
-            lastseen_datetime = self.tracker.last_seen[state]
+            lastseen_datetime = self.helpers['tracker'].last_seen[state]
             
             # could be unknown if we've just started
             if lastseen_datetime == "unknown":
@@ -139,7 +182,7 @@ class Telebot:
     def list_classes(self, chat_id):
         """Messages user with a list of classifier classes."""
 
-        message = "[i] available classes for use with /lastseen command: " + ", ".join(self.classifier.classes)
+        message = "[i] available classes for use with /lastseen command: " + ", ".join(self.helpers['classifier'].classes)
         self.bot.sendMessage(chat_id, message)
 
 
@@ -147,7 +190,7 @@ class Telebot:
         """Debug: dumps the __dict__ of every helper class."""
 
         message = str(self.__dict__)
-        for helper in [self.classiifer, self.petcam, self.timelapser, self.tracker]:
+        for helper in [value for value in self.helpers.values()]: 
              message += "\n" + str(helper.__dict__)
 
         self.bot.sendMessage(chat_id, message)

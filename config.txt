@@ -15,7 +15,7 @@ brighten_factor = 5.0
 token = ***your token here***
 recipients = 0123456789,9876543210,***your recipients here***
 
-[timelapse]
+[timelapseer]
 city = London
-sleep = 300
+sleep_interval = 300
 
