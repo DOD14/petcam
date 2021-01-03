@@ -65,6 +65,12 @@ class Timelapser:
                 print('[+] about to call loop_func')
                 self.loop_func()
 
+
+                # stop command allows current iteration to finish
+                # before breaking out of loop
+                if not self.loop_running:
+                    break
+
                 # take a break
                 print('\t[+] will now sleep ' + str(self.sleep_interval))
                 sleep(self.sleep_interval)
