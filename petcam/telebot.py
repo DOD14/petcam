@@ -26,11 +26,11 @@ class Telebot:
                 "/help": self.default_reply,
                 "/lastseen": self.report_last_seen,
                 "/lastsnap": self.send_last_snap,
-                "/loop": self.toggle_timelapser_loop,
+                "/loop": self.start_timelapser_loop,
                 "/photo": self.snap_and_send,
                 "/show": self.show_img,
                 "/shutdown": self.shutdown_now,
-                "/stop": self.toggle_timelapser_loop,
+                "/stop": self.stop_timelapser_loop,
                 "/update": self.status_update
                 }
         
@@ -226,14 +226,23 @@ class Telebot:
 
         self.bot.sendMessage(chat_id, message)
 
-    def toggle_timelapser_loop(self, chat_id):
-        """Start/stop timelapser loop."""
+    def start_timelapser_loop(self, chat_id):
+        """Start timelapser loop."""
+        if self.helpers['timelapser'].loop_running:
+            msg = '[!] loop already running'
+        else: 
+            msg = '[+] starting main loop'
+            threading.Thread(target=self.helpers['timelapser'].loop).start()
+
+        self.update_recipients(message=msg)
+    
+    def stop_timelapser_loop(self, chat_id):
+        """Stop timelapser loop."""
         if self.helpers['timelapser'].loop_running:
             msg = '[+] stopping main loop'
             self.helpers['timelapser'].loop_running = False
         else: 
-            msg = '[+] starting main loop'
-            threading.Thread(target=self.helpers['timelapser'].loop).start()
+            msg = '[!] loop is not running'
 
         self.update_recipients(message=msg)
 
