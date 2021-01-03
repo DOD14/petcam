@@ -6,7 +6,7 @@ from skimage.feature import hog
 class Classifier:
 
     def __init__(self, model_path=None):
-        print('[+] initialised classifier instance')
+        print('\t[+] initialised classifier instance')
         
         # made loading a model optional
         # because if you train a new model why load the old one

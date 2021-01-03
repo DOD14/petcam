@@ -18,7 +18,7 @@ class Timelapser:
 
         # function to run inside loop()
         self.loop_func = loop_func
-        self.loop_running = False
+        self.loop_running = False 
 
         # set how long to sleep between calls to loop_func
         self.sleep_interval = int(sleep_interval)
@@ -26,11 +26,8 @@ class Timelapser:
     def now(self):
         """Returns datetime.now() in the local timezone."""
         return datetime.now(pytz.timezone(self.city.timezone))
-    
-    def get_last_timestamp(self):
-        """Returns the latest datetime in the main loop() after removing white spaces"""
-        return str(self.last_datetime).replace(" ", "-")
-    
+   
+
     def update_sun(self):
         """Updates info of when the sun rises/sets - useful when the main loop runs several days."""
 
@@ -65,6 +62,7 @@ class Timelapser:
             while self.last_datetime.day == self.today:                 
                 
                 # do custom stuff! 
+                print('[+] about to call loop_func')
                 self.loop_func()
 
                 # take a break

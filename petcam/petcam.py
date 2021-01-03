@@ -15,12 +15,14 @@ class Petcam:
         self.save_dir = save_dir
         self.brightness_threshold = brightness_threshold
         self.brighten_factor = brighten_factor
+        self.last_snap = None
 
-    def snap(self, timestamp, light_outside=True):
+
+    def snap(self, timestamp, light_outside=False):
         """ Takes a photo using the command provided in the config file and brightens it up if necessary. Returns the path where the image has been saved."""
         
         # construct filename based on timestamp
-        filename = self.save_dir + "/" + timestamp + ".jpg"
+        filename = self.save_dir + "/" + timestamp.strftime("%d-%m-%Y+%H:%M:%S") + ".jpg"
         print('\t[+] preparing to take photo in mode light_outside = ' + str(light_outside) + ": "  + filename)
 
         # ensure camera not busy
@@ -36,6 +38,10 @@ class Petcam:
         
         # what it says on the tin
         self.brighten_if_needed(filename)
+
+        # in case someone wants to have a look
+        # without waiting for a new photo
+        self.last_snap = filename
 
         return filename
 

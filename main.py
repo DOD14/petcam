@@ -1,5 +1,6 @@
 import argparse
 import configparser
+from time import sleep
 
 from petcam.classifier import Classifier
 from petcam.petcam import Petcam
@@ -8,9 +9,11 @@ from petcam.timelapser import Timelapser
 from petcam.tracker import Tracker
 
 def snap_check_update():        
-   
+    
+    print('[+] in function snap_check_update')
+
     # snap photo with timestamp
-    filename =  petcam.snap(timelapser.get_last_timestamp(), 
+    filename =  petcam.snap(timelapser.last_datetime, 
             timelapser.light_outside())
    
     # classify image
@@ -56,3 +59,5 @@ telebot = Telebot(token = config['telebot']['token'],
             }
         )
 
+while True:
+    sleep(10)
