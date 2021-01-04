@@ -16,14 +16,15 @@ class Petcam:
         self.brightness_threshold = brightness_threshold
         self.brighten_factor = brighten_factor
         self.last_snap = None
-
+        self.snaps = []
 
     def snap(self, timestamp, light_outside=False):
         """ Takes a photo using the command provided in the config file and brightens it up if necessary. Returns the path where the image has been saved."""
         
         # construct filename based on timestamp
-        filename = self.save_dir + "/" + timestamp.strftime("%d-%m-%Y+%H:%M:%S") + ".jpg"
-        print('\t[+] preparing to take photo in mode light_outside = ' + str(light_outside) + ": "  + filename)
+        name = timestamp.strftime("%d-%m-%Y+%H:%M:%S") + ".jpg"
+        img_path = self.save_dir + "/" + name 
+        print('\t[+] preparing to take photo in mode light_outside = ' + str(light_outside) + ": "  + img_path)
 
         # ensure camera not busy
         self.wait_cam_free()
@@ -31,19 +32,20 @@ class Petcam:
         # set cam busy. snap pic, release cam
         self.camera_in_use = True
         cmd = self.day_cmd if light_outside else self.night_cmd
-        cmd += " " + filename
+        cmd += " " + img_path 
         print('\t[+] executing command: ' + cmd)
         os.system(cmd)
         self.camera_in_use = False
         
         # what it says on the tin
-        self.brighten_if_needed(filename)
+        self.brighten_if_needed(img_path)
 
         # in case someone wants to have a look
         # without waiting for a new photo
-        self.last_snap = filename
+        self.last_snap = img_path 
+        self.snaps.append(name)
 
-        return filename
+        return img_path 
 
     def wait_cam_free(self):
         """Sleeps until the camera_in_use flag is set to False."""

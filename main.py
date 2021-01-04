@@ -59,3 +59,5 @@ telebot = Telebot(token = config['telebot']['token'],
             }
         )
 
+while True:
+    sleep(10) 

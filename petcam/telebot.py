@@ -25,7 +25,7 @@ class Telebot:
                 "/browse": self.browse_snaps,
                 "/classes": self.list_classes,
                 "/debug": self.dump_info,
-                "/exit": self.exit_script,
+                "/exitscript": self.exit_script,
                 "/help": self.default_reply,
                 "/lastseen": self.report_last_seen,
                 "/lastsnap": self.send_last_snap,
@@ -46,7 +46,7 @@ class Telebot:
         self.update_recipients(message=msg)
 
         # start listening for incoming messages
-        telepot.loop.MessageLoop(self.bot, self.on_chat_message).run_forever(relax=2)
+        telepot.loop.MessageLoop(self.bot, self.on_chat_message).run_as_thread(relax=2)
         
     
     def exit_script(self, chat_id):
@@ -55,6 +55,11 @@ class Telebot:
         os.kill(os.getpid(), signal.SIGTERM)
 
     def show_img(self, chat_id, name):
+        if not name in self.helpers['petcam'].snaps:
+            msg = '[!] invalid filename, please use /browse to see available snapshots'
+            self.bot.sendMessage(chat_id, msg)
+            return
+
         img_path = self.helpers['petcam'].save_dir + "/" + name
         print('[+] showing image: ' + img_path)
 
@@ -64,12 +69,9 @@ class Telebot:
 
     def browse_snaps(self, chat_id):
         """Browse snapshots taken so far in current script run by name."""
-        # TODO: isolate current 'current run' snapshots from other files in folder
-        # potential security risk since user can ask for any photo
-        
         # construct inline keyboard based on snapshot filenames
         snaps_dir = self.helpers['petcam'].save_dir
-        filenames = [snap.name for snap in Path(snaps_dir).iterdir() if snap.is_file()]
+        filenames = [snap for snap in self.helpers['petcam'].snaps]
         buttons = [[KeyboardButton(text='/show ' + name)] for name in filenames]
         keyboard = ReplyKeyboardMarkup(keyboard = buttons)
         
