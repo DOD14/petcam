@@ -1,3 +1,4 @@
+import os, signal
 from pathlib import Path
 import telepot, telepot.loop
 from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
@@ -20,9 +21,11 @@ class Telebot:
 
         # each command keyword corresponds to a function
         self.cmd_dict = { 
+                "/update": self.status_update,
                 "/browse": self.browse_snaps,
                 "/classes": self.list_classes,
                 "/debug": self.dump_info,
+                "/exit": self.exit_script,
                 "/help": self.default_reply,
                 "/lastseen": self.report_last_seen,
                 "/lastsnap": self.send_last_snap,
@@ -30,8 +33,7 @@ class Telebot:
                 "/photo": self.snap_and_send,
                 "/show": self.show_img,
                 "/shutdown": self.shutdown_now,
-                "/stop": self.stop_timelapser_loop,
-                "/update": self.status_update
+                "/stop": self.stop_timelapser_loop
                 }
         
         # construct a custom keyboard from our list of commands
@@ -44,9 +46,14 @@ class Telebot:
         self.update_recipients(message=msg)
 
         # start listening for incoming messages
-        telepot.loop.MessageLoop(self.bot, self.on_chat_message).run_as_thread()
+        telepot.loop.MessageLoop(self.bot, self.on_chat_message).run_forever(relax=2)
         
     
+    def exit_script(self, chat_id):
+        msg = '[+] exiting script... bye!'
+        self.update_recipients(message=msg)
+        os.kill(os.getpid(), signal.SIGTERM)
+
     def show_img(self, chat_id, name):
         img_path = self.helpers['petcam'].save_dir + "/" + name
         print('[+] showing image: ' + img_path)
