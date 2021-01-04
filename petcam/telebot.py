@@ -7,14 +7,14 @@ import threading
 class Telebot:
 
     def __init__(self, token, recipients, helpers):
-        print('\t[+] initialised telebot instance')
+        print('[+][telebot] initialised telebot instance')
        
         # initialise a Telegram bot with given token
         self.bot = telepot.Bot(token)
 
         # we will only accept messages from the given ids
         self.recipients = recipients
-        print('\t[i] accepting messages from ids: ' + ", ".join(self.recipients))
+        print('[i] accepting messages from ids: ' + ", ".join(self.recipients))
        
         # get a handle on helper classes 
         self.helpers = helpers
@@ -61,7 +61,7 @@ class Telebot:
             return
 
         img_path = self.helpers['petcam'].save_dir + "/" + name
-        print('[+] showing image: ' + img_path)
+        print('[+][telebot] showing image: ' + img_path)
 
         with open(img_path, 'rb') as img:
             self.bot.sendPhoto(chat_id, img, caption=name, reply_markup = self.keyboard)
@@ -95,25 +95,25 @@ class Telebot:
         # print basic information about the sender
         sender_id = str(msg['from']['id'])
         sender_name = msg['from']['first_name']
-        print('\t[+] handling message from ' + sender_id + " (" + sender_name + ")")
+        print('[+][telebot] handling message from ' + sender_id + " (" + sender_name + ")")
         
         # ignore unknown senders
         if sender_id not in self.recipients:
-            print('\t[!] sender unknown, dumping message' + "\n" + str(msg))
+            print('[!] sender unknown, dumping message' + "\n" + str(msg))
             return
 
-        print('\t[+] message accepted')
+        print('[+][telebot] message accepted')
 
         # get information about message type and decide on a reply
         content_type, chat_type, chat_id = telepot.glance(msg)
         if(content_type=='text'):
             text = msg['text']
-            print('\t[+] received text: ' + text)
+            print('[+][telebot] received text: ' + text)
             
             # the first word in the received message should be a command
             text = text.split(" ")
             command = text[0]
-            print('\t\t[+] command: ' + command)
+            print('[+][telebot] command: ' + command)
 
             # but if we don't recognise the command, provide a default reply
             if not command in self.cmd_dict:
@@ -126,7 +126,7 @@ class Telebot:
             
             # many-word commands also contain parameters to be passed on to the command function    
             else:
-                print('[+] command args: '+ str(text[1:]))
+                print('[+][telebot] command args: '+ str(text[1:]))
                 self.cmd_dict[command](chat_id, *text[1:])
    
 
@@ -156,12 +156,12 @@ class Telebot:
 
     def update_recipients(self, message='[!] message empty error', img_path=''):
         """Send a message (optionally an image) to every recipient in turn."""
-        print('\t[+] preparing to send message to all recipients:')
-        print("\t" + message)
+        print('[+][telebot] preparing to send message to all recipients:')
+        print("" + message)
 
         # loop over recipients
         for rec in self.recipients:
-            print("\t\t[+] updating " + rec)
+            print("[+][telebot] updating " + rec)
             
             # if no image path was supplied just text the user
             if img_path == '':

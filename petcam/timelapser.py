@@ -7,7 +7,7 @@ class Timelapser:
 
     def __init__(self, city, sleep_interval, loop_func):
 
-        print('\t[+] initialised timelapser instance')
+        print('[+][timelapser] initialised timelapser instance')
 
         # once we know where we are we can get the currrnt time in the local timezone
         self.city = astral.geocoder.lookup(city, astral.geocoder.database())
@@ -44,12 +44,12 @@ class Timelapser:
     
     def loop(self):
         """The main purpose of this class: runs a given function in a loop, but keeping track of day and night for camera setup and image processing purposes."""
-        print('\t[+] starting timelapser loop')
+        print('[+][timelapser] starting timelapser loop')
         self.loop_running = True
 
         # one iteration per day
         while self.loop_running: 
-            print("\t[+] it's a new day")
+            print("[+][timelapser] it's a new day")
 
             # update the day and the sunrise/sunset times
             self.today = self.now().day
@@ -62,7 +62,7 @@ class Timelapser:
             while self.last_datetime.day == self.today:                 
                 
                 # do custom stuff! 
-                print('[+] about to call loop_func')
+                print('[+][timelapser] about to call loop_func')
                 self.loop_func()
 
 
@@ -72,7 +72,7 @@ class Timelapser:
                     break
 
                 # take a break
-                print('\t[+] will now sleep ' + str(self.sleep_interval))
+                print('[+][timelapser] will now sleep ' + str(self.sleep_interval))
                 sleep(self.sleep_interval)
 
                 # update last_datetime to check if a new day has started

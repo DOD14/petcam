@@ -6,7 +6,7 @@ class Petcam:
 
     def __init__(self, day_snap_cmd, night_snap_cmd, save_dir = 'photos', brightness_threshold=80, brighten_factor=2.0):
         
-        print('\t[+] initialised petcam instance')
+        print('[+][petcam] initialised petcam instance')
        
         # just initilise a bunch of attributes
         self.camera_in_use = False
@@ -24,7 +24,7 @@ class Petcam:
         # construct filename based on timestamp
         name = timestamp.strftime("%d-%m-%Y+%H:%M:%S") + ".jpg"
         img_path = self.save_dir + "/" + name 
-        print('\t[+] preparing to take photo in mode light_outside = ' + str(light_outside) + ": "  + img_path)
+        print('[+][petcam] preparing to take photo in mode light_outside = ' + str(light_outside) + ": "  + img_path)
 
         # ensure camera not busy
         self.wait_cam_free()
@@ -33,7 +33,7 @@ class Petcam:
         self.camera_in_use = True
         cmd = self.day_cmd if light_outside else self.night_cmd
         cmd += " " + img_path 
-        print('\t[+] executing command: ' + cmd)
+        print('[+][petcam] executing command: ' + cmd)
         os.system(cmd)
         self.camera_in_use = False
         
@@ -52,7 +52,7 @@ class Petcam:
         
         # print a message before going silent
         if self.camera_in_use:
-            print('\t[+] waiting for camera')
+            print('[+][petcam] waiting for camera')
         
         # sleep until camera ready
         while self.camera_in_use:
@@ -69,7 +69,7 @@ class Petcam:
         
         # if the image is dark, enhance it and save under the same name
         if brightness < self.brightness_threshold:
-            print("\t[+] image brightness (" + str(brightness) + ") < threshold (" + str(self.brightness_threshold) + ")")
-            print('\t[+] brightening up image by a factor of ' + str(self.brighten_factor))
+            print("[+][petcam] image brightness (" + str(brightness) + ") < threshold (" + str(self.brightness_threshold) + ")")
+            print('[+][petcam] brightening up image by a factor of ' + str(self.brighten_factor))
             bright = ImageEnhance.Brightness(img)
             bright.enhance(self.brighten_factor).save(filename, "JPEG")

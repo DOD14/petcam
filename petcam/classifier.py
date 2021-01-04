@@ -6,7 +6,7 @@ from skimage.feature import hog
 class Classifier:
 
     def __init__(self, model_path=None):
-        print('\t[+] initialised classifier instance')
+        print('[+][classifier] initialised classifier instance')
         
         # made loading a model optional
         # because if you train a new model why load the old one
@@ -18,6 +18,8 @@ class Classifier:
     def extract_hog_fd(self, img_path, resize_shape):
         """Loads an image from path img_path, applies some pre-processing including resizing to shape resize_shape, and returns its HOG feature descriptor."""
         
+        print('[+][classifier] extracting HOG feature descriptor')
+
         # load image
         img = cv2.imread(img_path)
 
@@ -36,7 +38,7 @@ class Classifier:
     def classify_image(self, img_path, resize_shape=(128, 128)):
         """Takes a sklearn-trained model and uses it to classify the image located at img_path; note that pre-processing requires resizing to resize_shape."""
         
-        print('\t[+] preparing to classify image: ' + img_path)
+        print('[+][classifier] preparing to classify image: ' + img_path)
 
         # get HOG feature vector
         hog_fd = self.extract_hog_fd(img_path, resize_shape)
@@ -44,12 +46,12 @@ class Classifier:
         # get prediction from model
         result =  str(self.model.predict(hog_fd.reshape(1, -1))[0])
         
-        print('\t[+] classification result: ' + result)
+        print('[+][classifier] classification result: ' + result)
         return result
 
     def load_model(self, model_path):
         """ Loads and returns a pickle-saved classifier model from model_path."""
-        print('\t[+] loading classifier model: ' + model_path)
+        print('[+][classifier] loading classifier model: ' + model_path)
         
         # just open file, load model, return loaded model
         with open(model_path, 'rb') as file:
