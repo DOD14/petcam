@@ -2,6 +2,7 @@ import os, signal
 from pathlib import Path
 import telepot, telepot.loop
 from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
+from time import sleep
 import threading
 
 class Telebot:
@@ -52,6 +53,8 @@ class Telebot:
     def exit_script(self, chat_id):
         msg = '[+] exiting script... bye!'
         self.update_recipients(message=msg)
+        self.bot.getUpdates()
+        sleep(2)
         os.kill(os.getpid(), signal.SIGTERM)
 
     def show_img(self, chat_id, name):
@@ -152,7 +155,9 @@ class Telebot:
         """Shuts down device immediately."""
         msg = '[+] shutting down... bye!'
         self.update_recipients(message=msg)
-        os.system('sudo shutdown now')
+        self.bot.getUpdates()
+        sleep(2)
+        os.system('sudo nohup shutdown now')
 
     def update_recipients(self, message='[!] message empty error', img_path=''):
         """Send a message (optionally an image) to every recipient in turn."""
