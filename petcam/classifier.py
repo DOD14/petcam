@@ -18,8 +18,6 @@ class Classifier:
     def extract_hog_fd(self, img_path, resize_shape):
         """Loads an image from path img_path, applies some pre-processing including resizing to shape resize_shape, and returns its HOG feature descriptor."""
         
-        print('[+][classifier] extracting HOG feature descriptor')
-
         # load image
         img = cv2.imread(img_path)
 
@@ -27,7 +25,6 @@ class Classifier:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # resize to desired dimensions 
-        print('[+][classifier] resizing image ' + img_path + ' to ' + str(resize_shape))
         img = cv2.resize(img, resize_shape)
 
         # extract HOG feature descriptor

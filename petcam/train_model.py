@@ -1,3 +1,4 @@
+import argparse
 import configparser
 import cv2
 from pathlib import Path
@@ -12,9 +13,14 @@ from sklearn.svm import LinearSVC
 from classifier import Classifier
 classifier = Classifier()
 
-# parse config file config.txt
+# use argparse to get the config file
+ap = argparse.ArgumentParser()
+ap.add_argument("-c", "--config", required = True, help="text file containing various parameters used across petcam scripts")
+args = vars(ap.parse_args())
+
+# parse config file c
 config = configparser.ConfigParser()
-config.read('config.txt')
+config.read(args['config'])
 print("[+] read config file")
 
 # get the folders corresponding to the classes
@@ -44,7 +50,8 @@ for i, direc in enumerate(folders):
         print('[progress] ' + label + " (" +str(i+1) + "/" + str(folders_len)+ "): " + str(j+1) + "/" + str(images_len), end="\r")
      
         # append HOG feature descriptor and image label to data
-        hog_fd = classifier.extract_hog_fd(str(imagePath), (int(config['classifier']['resize_shape_h']), int(config['classifier']['resize_shape_w'])))
+        hog_fd = classifier.extract_hog_fd(str(imagePath), 
+                tuple([int(x) for x in config['classifier']['resize_shape'].split(",")]))
         data.append(hog_fd)
         labels.append(label)
     
