@@ -15,8 +15,8 @@ def snap_check_update():
             timelapser.last_datetime, 
             timelapser.light_outside(),
             resolution = tuple([int(x) for x in config['petcam']['resolution'].split(",")]),
-            iso = config['petcam']['iso'],
-            shutter_speed = config['petcam']['shutter_speed'],   
+            iso = int(config['petcam']['iso']),
+            shutter_speed = int(config['petcam']['shutter_speed']),   
             awb_mode = config['petcam']['awb_mode']
             )
    
