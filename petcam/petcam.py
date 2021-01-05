@@ -1,24 +1,27 @@
+from fractions import Fraction
 import os
+from picamera import PiCamera
 from PIL import Image, ImageStat, ImageEnhance
 from time import sleep
 
 class Petcam:
 
-    def __init__(self, day_snap_cmd, night_snap_cmd, save_dir = 'photos', brightness_threshold=80, brighten_factor=2.0):
+    def __init__(self, save_dir = 'photos', brightness_threshold=80, brighten_factor=2.0):
         
         print('[+][petcam] initialised petcam instance')
        
         # just initilise a bunch of attributes
         self.camera_in_use = False
-        self.day_cmd = day_snap_cmd
-        self.night_cmd = night_snap_cmd
+        
         self.save_dir = save_dir
+
         self.brightness_threshold = brightness_threshold
         self.brighten_factor = brighten_factor
+        
         self.last_snap = None
         self.snaps = []
 
-    def snap(self, timestamp, light_outside=False):
+    def snap(self, timestamp, light_outside = True, resolution = (256, 256), iso = 800, shutter_speed = 6000000, awb_mode = 'tungsten'):
         """ Takes a photo using the command provided in the config file and brightens it up if necessary. Returns the path where the image has been saved."""
         
         # construct filename based on timestamp
@@ -31,10 +34,18 @@ class Petcam:
         
         # set cam busy. snap pic, release cam
         self.camera_in_use = True
-        cmd = self.day_cmd if light_outside else self.night_cmd
-        cmd += " " + img_path 
-        print('[+][petcam] executing command: ' + cmd)
-        os.system(cmd)
+
+        with PiCamera(resolution=resolution) as cam: 
+            
+            if not light_outside:
+                cam.framerate = Fraction(1000000, shutter_speed)
+                cam.iso = iso
+                cam.shutter_speed = shutter_speed 
+                cam.exposure_mode = 'night'
+                cam.awb_mode = awb_mode
+
+            cam.capture(img_path)
+
         self.camera_in_use = False
         
         # what it says on the tin
@@ -73,3 +84,6 @@ class Petcam:
             print('[+][petcam] brightening up image by a factor of ' + str(self.brighten_factor))
             bright = ImageEnhance.Brightness(img)
             bright.enhance(self.brighten_factor).save(filename, "JPEG")
+        else:
+            print("[+][petcam] image brightness (" + str(brightness) + ") > threshold (" + str(self.brightness_threshold) + ")")
+

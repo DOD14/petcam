@@ -59,7 +59,7 @@ class Timelapser:
             self.last_datetime = self.now()
 
             # as many iterations in a day as sleep_interval allows
-            while self.last_datetime.day == self.today:                 
+            while self.loop_running and self.last_datetime.day == self.today:                 
                 
                 # do custom stuff! 
                 print('[+][timelapser] about to call loop_func')
@@ -78,3 +78,4 @@ class Timelapser:
                 # update last_datetime to check if a new day has started
                 self.last_datetime = self.now()
 
+        print('[+][timelapser] loop ended')

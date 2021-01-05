@@ -5,10 +5,12 @@ resize_shape = 256,256
 
 [petcam]
 save_dir = photos
-day_snap_cmd = raspistill -w 256 -h 256 -o 
-night_snap_cmd = raspistill -w 256 -h 256 -ss 100000 -o 
-brightness_threshold = 80
-brighten_factor = 5.0
+resolution = 256,256
+iso = 800
+shutter_speed = 6000000
+awb_mode = 'tungsten'
+brightness_threshold = 100
+brighten_factor = 10.0
 
 [telebot]
 token = ***your token here***
