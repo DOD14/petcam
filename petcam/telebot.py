@@ -244,19 +244,19 @@ class Telebot:
         """Start timelapser loop."""
         if self.helpers['timelapser'].loop_running:
             msg = '[!] loop already running'
+            self.bot.sendMessage(chat_id, msg)
         else: 
             msg = '[+] starting main loop'
             threading.Thread(target=self.helpers['timelapser'].loop).start()
-
-        self.update_recipients(message=msg)
+            self.update_recipients(message=msg)
     
     def stop_timelapser_loop(self, chat_id):
         """Stop timelapser loop."""
         if self.helpers['timelapser'].loop_running:
             msg = '[+] stopping main loop'
             self.helpers['timelapser'].loop_running = False
+            self.update_recipients(message=msg)
         else: 
             msg = '[!] loop is not running'
-
-        self.update_recipients(message=msg)
+            self.bot.sendMessage(chat_id, msg)
 
