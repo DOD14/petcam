@@ -14,7 +14,7 @@ def snap_check_update():
     filename =  petcam.snap(
             timelapser.last_datetime, 
             timelapser.light_outside(),
-            resolution = tuple([int(x) for x in config['petcam']['resolution'].split(",")])
+            resolution = tuple([int(x) for x in config['petcam']['resolution'].split(",")]),
             iso = config['petcam']['iso'],
             shutter_speed = config['petcam']['shutter_speed'],   
             awb_mode = config['petcam']['awb_mode']
@@ -42,8 +42,6 @@ config.read(args['config'])
 # instantiate helper classes
 classifier = Classifier(model_path = config['classifier']['model_path'])
 petcam = Petcam(save_dir = config['petcam']['save_dir'],
-        day_snap_cmd = config['petcam']['day_snap_cmd'], 
-        night_snap_cmd = config['petcam']['night_snap_cmd'],
         brightness_threshold = float(config['petcam']['brightness_threshold']),
         brighten_factor = float(config['petcam']['brighten_factor'])
         )

@@ -38,7 +38,7 @@ class Petcam:
         with PiCamera(resolution=resolution) as cam: 
             
             if not light_outside:
-                cam.framerate = Fraction(1, shutterspeed/1000000)
+                cam.framerate = Fraction(1000000, shutter_speed)
                 cam.iso = iso
                 cam.shutter_speed = shutter_speed 
                 cam.exposure_mode = 'night'

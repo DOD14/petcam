@@ -49,30 +49,14 @@ class Telebot:
         # start listening for incoming messages
         telepot.loop.MessageLoop(self.bot, self.on_chat_message).run_as_thread(relax=2)
         
-    
-    def exit_script(self, chat_id):
-        msg = '[+] exiting script... bye!'
-        self.update_recipients(message=msg)
-        self.bot.getUpdates()
-        sleep(2)
-        os.kill(os.getpid(), signal.SIGTERM)
-
-    def show_img(self, chat_id, name):
-        if not name in self.helpers['petcam'].snaps:
-            msg = '[!] invalid filename, please use /browse to see available snapshots'
-            self.bot.sendMessage(chat_id, msg)
-            return
-
-        img_path = self.helpers['petcam'].save_dir + "/" + name
-        print('[+][telebot] showing image: ' + img_path)
-
-        with open(img_path, 'rb') as img:
-            self.bot.sendPhoto(chat_id, img, caption=name, reply_markup = self.keyboard)
-        
-
     def browse_snaps(self, chat_id):
         """Browse snapshots taken so far in current script run by name."""
         # construct inline keyboard based on snapshot filenames
+        if len(self.helpers['petcam'].snaps) == 0:
+            msg = '[i] no snapshots yet, use /photo to take one or start the photo /loop' 
+            self.bot.sendMessage(chat_id, msg)
+            return
+        
         snaps_dir = self.helpers['petcam'].save_dir
         filenames = [snap for snap in self.helpers['petcam'].snaps]
         buttons = [[KeyboardButton(text='/show ' + name)] for name in filenames]
@@ -81,7 +65,7 @@ class Telebot:
         # present the user with keyboard
         msg = '[+] pick a snapshot to view'
         self.bot.sendMessage(chat_id, msg, reply_markup = keyboard)
-
+   
 
     def default_reply(self, chat_id):
         """Message user with fallback reply if command not recognised or they explicitly ask for /help."""
@@ -90,6 +74,14 @@ class Telebot:
         # send custom keyboard with examples of available commands
         self.bot.sendMessage(chat_id, "[i] available commands:",
             reply_markup=self.keyboard)
+    
+        
+    def exit_script(self, chat_id):
+        msg = '[+] exiting script... bye!'
+        self.update_recipients(message=msg)
+        self.bot.getUpdates()
+        sleep(2)
+        os.kill(os.getpid(), signal.SIGTERM)
 
 
     def on_chat_message(self, msg):
@@ -122,16 +114,42 @@ class Telebot:
             if not command in self.cmd_dict:
                 self.cmd_dict['/help'](chat_id)
                 return
-            
-            # single-word commands only need to know the chat_id to reply to
-            if len(text) == 1:
-                self.cmd_dict[command](chat_id)
-            
-            # many-word commands also contain parameters to be passed on to the command function    
-            else:
-                print('[+][telebot] command args: '+ str(text[1:]))
-                self.cmd_dict[command](chat_id, *text[1:])
-   
+           
+            try:
+                # single-word commands only need to know the chat_id to reply to
+                if len(text) == 1:
+                    self.cmd_dict[command](chat_id)
+                
+                # many-word commands also contain parameters to be passed on to the command function    
+                else:
+                    print('[+][telebot] command args: '+ str(text[1:]))
+                    self.cmd_dict[command](chat_id, *text[1:])
+            except TypeError as err:
+                print(err)
+                msg = '[!] invalid number of arguments provided'
+                self.bot.sendMessage(chat_id, msg)
+
+    def show_img(self, chat_id, name):
+        
+        if len(self.helpers['petcam'].snaps) == 0:
+            msg = '[i] no snapshots yet, use /photo to take one or start the photo /loop' 
+            self.bot.sendMessage(chat_id, msg)
+            return
+
+        
+        if not name in self.helpers['petcam'].snaps:
+            msg = '[!] invalid filename, please use /browse to see available snapshots'
+            self.bot.sendMessage(chat_id, msg)
+            return
+
+        img_path = self.helpers['petcam'].save_dir + "/" + name
+        print('[+][telebot] showing image: ' + img_path)
+
+        with open(img_path, 'rb') as img:
+            self.bot.sendPhoto(chat_id, img, caption=name, reply_markup = self.keyboard)
+        
+
+
 
     def send_last_snap(self, chat_id):
         """Retrieves and sends the latest snapshot."""
@@ -171,7 +189,6 @@ class Telebot:
             # if no image path was supplied just text the user
             if img_path == '':
                 self.bot.sendMessage(rec, message)
-            
             # if an image path is supplied, load the image and send
             # yes we need to open the image for each sendd - known issue
             else:
