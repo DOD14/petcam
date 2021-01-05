@@ -11,8 +11,14 @@ from petcam.tracker import Tracker
 def snap_check_update():        
     
     # snap photo with timestamp
-    filename =  petcam.snap(timelapser.last_datetime, 
-            timelapser.light_outside())
+    filename =  petcam.snap(
+            timelapser.last_datetime, 
+            timelapser.light_outside(),
+            resolution = tuple([int(x) for x in config['petcam']['resolution'].split(",")])
+            iso = config['petcam']['iso'],
+            shutter_speed = config['petcam']['shutter_speed'],   
+            awb_mode = config['petcam']['awb_mode']
+            )
    
     # classify image
     result = classifier.classify_image(img_path=filename, 
