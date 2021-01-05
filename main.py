@@ -10,18 +10,13 @@ from petcam.tracker import Tracker
 
 def snap_check_update():        
     
-    print('[+] in function snap_check_update')
-
     # snap photo with timestamp
     filename =  petcam.snap(timelapser.last_datetime, 
             timelapser.light_outside())
    
     # classify image
     result = classifier.classify_image(img_path=filename, 
-            resize_shape=(int(config['classifier']['resize_shape_h']), 
-               int(config['classifier']['resize_shape_w'])
-                )
-            )
+            resize_shape = tuple([int(x) for x in config['classifier']['resize_shape'].split(",")]))
     
     # update our records of what was spotted when
     # and notify recipients if there has been a state change

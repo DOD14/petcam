@@ -27,6 +27,7 @@ class Classifier:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # resize to desired dimensions 
+        print('[+][classifier] resizing image ' + img_path + ' to ' + str(resize_shape))
         img = cv2.resize(img, resize_shape)
 
         # extract HOG feature descriptor
