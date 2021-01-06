@@ -93,3 +93,20 @@ Petcam relies on several helper classes you can tweak:
   ```city```: Any city in your timezone will do. We need this to know when to use night mode.
   
   ```sleep_interval```: The number of seconds to wait between iterations of the photo snapping loop. Actual interval will be longer because it takes time to take photos and classify them.
+  
+  
+## Training the classifier
+Inside the ```dataset``` folder you specified, you should have a folder with images for each class you wish to identify. The folder name becomes the class name during training. 
+```
+dataset -- cat
+            |-- photo1.jpg
+            |-- photo2.jpg
+            |-- cat.jpg
+            
+        -- empty
+            |-- photo1.jpg
+            |-- empty.jpg
+```
+
+Then train the model specifying your config file:
+``` python3 petcam/train_model.py -c config.txt```
