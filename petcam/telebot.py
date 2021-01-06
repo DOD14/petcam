@@ -80,7 +80,7 @@ class Telebot:
         msg = '[+] exiting script... bye!'
         self.update_recipients(message=msg)
         self.bot.getUpdates()
-        sleep(2)
+        sleep(5)
         os.kill(os.getpid(), signal.SIGTERM)
 
 
