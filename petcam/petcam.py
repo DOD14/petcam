@@ -1,3 +1,4 @@
+import cv2
 from fractions import Fraction
 import os
 from picamera import PiCamera
@@ -87,3 +88,18 @@ class Petcam:
         else:
             print("[+][petcam] image brightness (" + str(brightness) + ") > threshold (" + str(self.brightness_threshold) + ")")
 
+
+    def snaps_to_video(self, video_size, fps):
+        videoname = self.vid_save_dir + "/" self.snaps[-1].replace("jpg", "avi"),
+        fourcc = cv.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter(
+                fourcc,
+                fps,
+                video_size
+            (
+        for snap in self.snaps:
+            img = cv2.imread(self.img_save_dir + "/" + name)
+            img = cv2.resize(img, video_size)
+            out.write(img)
+        out.release()
+        return 
