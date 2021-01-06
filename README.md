@@ -9,27 +9,56 @@ A collection of python scripts that use the Raspberry Pi Camera and Telegram Mes
 * [Training the classifier](#training-the-classifier)
 
 ## Summary of Features
-Before taking advantage of any features, you train a custom linear regression model on images that capture several *states*. For me that means gathering some photos of my cat's basket when it is occupied or empty. The trained model then has two classes: 'cat' and 'empty'.
+Before taking advantage of any features, you train a custom linear regression model on images of several states. For me that means gathering some photos of my cat's basket when it is occupied or empty. The trained model then has two classes: 'cat' and 'empty'.
 
 When all runs smoothly, you interact with the module through a Telegram bot and can issue the following commands:
 
-```/loop```: Start a loop that takes photos at an interval, classifies each photo based on the model you trained, and messages you when a change in state has ocurred. In my case, when the cat arrives home I get the message 'empty -> cat', and when he leaves, 'cat -> empty'.
+* **tracking**:
 
-```/stop```: Stop running the aforementioned loop.
+  ```/loop```: Start a loop that takes photos at an interval, classifies each photo based on the model you trained, and messages you when a change in state has ocurred. In my case, when the cat arrives home I get the message 'empty -> cat', and when he leaves, 'cat -> empty'.
 
-```/photo```: Takes a photo and sends it to you.
+  ```/update```: Lets you know which state was most recently seen and when: 'cat spotted at 19:38:52'
 
-```/browse```: Browse photos taken so far by filename.
+  ```/lastseen [state]```: You explicitly ask when a state was last seen: 'last saw cat at 15:01:20'
+  
+  ```/lastsnap```: Shows you the latest taken photo.
 
-```/show```: Sends you the photo you specified by filename.
+  ```/stop```: Stops running the loop.
+  
+* **photos**:
 
-```/exitscript```: Kills the process associated with running the scripts.
+  ```/photo```: Takes a photo and sends it to you.
 
-```/shutdown```: Shuts down the Raspberry Pi by issuing 'sudo shutdown now'
+
+  ```/browse```: Browse photos taken so far by filename.
+
+  ```/show [pic.jpg]```: Sends you the photo you specified by filename.
+  
+* **information**
+
+  ```/classes```: Lists the classes of the trained model.
+  
+  ```/help```: Sends a ReplyKeyboardMarkup so that you conveniently get all commands as buttons.
+  
+  ```/debug```: Dumps info about important objects.
+  
+  
+* **quitting**
+
+  ```/exitscript```: Kills the process associated with running the scripts.
+
+  ```/shutdown```: Shuts down the Raspberry Pi by issuing 'sudo shutdown now'
 
 
 ## Requirements
+I use Python 3.7.3 on a Raspberry Pi Zero W with Raspberry Pi Camera v1. See also [requirements.txt](petcam/requirements.txt).
+
+```pip3 install astral opencv-python picamera pillow scikit-image scikit-learn telepot```
 
 ## Installation
+Just clone the repository:
+
+```git clone --depth 1 https://github.com/DOD14/petcam.git```
 
 ## Configuration
+
