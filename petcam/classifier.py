@@ -5,17 +5,19 @@ from skimage.feature import hog
 
 class Classifier:
 
-    def __init__(self, model_path=None):
+    def __init__(self, model_path=None, resize_shape = (256, 256)):
         print('[+][classifier] initialised classifier instance')
         
+        self.resize_shape = resize_shape
+
         # made loading a model optional
         # because if you train a new model why load the old one
-        if model_path != None:
+        if model_path is not None:
             self.model = self.load_model(model_path)
             self.classes = self.model.classes_
 
 
-    def extract_hog_fd(self, img_path, resize_shape):
+    def extract_hog_fd(self, img_path):
         """Loads an image from path img_path, applies some pre-processing including resizing to shape resize_shape, and returns its HOG feature descriptor."""
         
         # load image
@@ -25,7 +27,7 @@ class Classifier:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # resize to desired dimensions 
-        img = cv2.resize(img, resize_shape)
+        img = cv2.resize(img, self.resize_shape)
 
         # extract HOG feature descriptor
         hog_fd = hog(img, orientations = 9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), transform_sqrt=True, block_norm='L2-Hys')

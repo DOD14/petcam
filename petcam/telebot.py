@@ -1,3 +1,4 @@
+import atexit
 import os, signal
 from pathlib import Path
 import telepot, telepot.loop
@@ -23,15 +24,16 @@ class Telebot:
         # each command keyword corresponds to a function
         self.cmd_dict = { 
                 "/update": self.status_update,
+                "/photo": self.snap_and_send,
+                "/lastseen": self.report_last_seen,
+                "/lastsnap": self.send_last_snap,
+                "/lapse": self.send_video_lapse,
+                "/startloop": self.start_timelapser_loop,
                 "/browse": self.browse_snaps,
                 "/classes": self.list_classes,
                 "/debug": self.dump_info,
                 "/exitscript": self.exit_script,
                 "/help": self.default_reply,
-                "/lastseen": self.report_last_seen,
-                "/lastsnap": self.send_last_snap,
-                "/loop": self.start_timelapser_loop,
-                "/photo": self.snap_and_send,
                 "/show": self.show_img,
                 "/shutdown": self.shutdown_now,
                 "/stop": self.stop_timelapser_loop
@@ -43,8 +45,10 @@ class Telebot:
         self.keyboard = ReplyKeyboardMarkup(keyboard=buttons)
         
         # let everyone now bot is up and running
-        msg = '[+] bot activated! use /loop to begin tracking'
+        msg = '[+] bot activated! use /startloop to begin tracking or /help for a list of available commands'
         self.update_recipients(message=msg)
+        
+        atexit.register(self.exit_forced)
 
         # start listening for incoming messages
         telepot.loop.MessageLoop(self.bot, self.on_chat_message).run_as_thread(relax=2)
@@ -57,7 +61,7 @@ class Telebot:
             self.bot.sendMessage(chat_id, msg)
             return
         
-        snaps_dir = self.helpers['petcam'].save_dir
+        snaps_dir = self.helpers['petcam'].img_save_dir
         filenames = [snap for snap in self.helpers['petcam'].snaps]
         buttons = [[KeyboardButton(text='/show ' + name)] for name in filenames]
         keyboard = ReplyKeyboardMarkup(keyboard = buttons)
@@ -80,8 +84,14 @@ class Telebot:
         msg = '[+] exiting script... bye!'
         self.update_recipients(message=msg)
         self.bot.getUpdates()
-        sleep(2)
+        sleep(5)
         os.kill(os.getpid(), signal.SIGTERM)
+
+    
+    def exit_forced(self):
+        msg = '[!] exiting immediately because of an error'
+        print(msg)
+        self.update_recipients(message=msg)
 
 
     def on_chat_message(self, msg):
@@ -101,7 +111,7 @@ class Telebot:
 
         # get information about message type and decide on a reply
         content_type, chat_type, chat_id = telepot.glance(msg)
-        if(content_type=='text'):
+        try:    
             text = msg['text']
             print('[+][telebot] received text: ' + text)
             
@@ -110,11 +120,6 @@ class Telebot:
             command = text[0]
             print('[+][telebot] command: ' + command)
 
-            # but if we don't recognise the command, provide a default reply
-            if not command in self.cmd_dict:
-                self.cmd_dict['/help'](chat_id)
-                return
-           
             try:
                 # single-word commands only need to know the chat_id to reply to
                 if len(text) == 1:
@@ -128,6 +133,14 @@ class Telebot:
                 print(err)
                 msg = '[!] invalid number of arguments provided'
                 self.bot.sendMessage(chat_id, msg)
+            except KeyError as err:
+                #if we don't recognise the command, provide a default reply
+                print(err)
+                self.cmd_dict['/help'](chat_id)
+        except Exception as err:
+            print(err)
+            msg = '[!] an error occurred while retrieving message text'
+            self.bot.sendMessage(chat_id, msg)
 
     def show_img(self, chat_id, name):
         
@@ -136,17 +149,16 @@ class Telebot:
             self.bot.sendMessage(chat_id, msg)
             return
 
-        
-        if not name in self.helpers['petcam'].snaps:
+        try:
+            img_path = self.helpers['petcam'].img_save_dir + "/" + name
+            print('[+][telebot] showing image: ' + img_path)
+
+            with open(img_path, 'rb') as img:
+                self.bot.sendPhoto(chat_id, img, caption=name, reply_markup = self.keyboard)
+        except FileNotFoundError as err:
+            print(err)
             msg = '[!] invalid filename, please use /browse to see available snapshots'
             self.bot.sendMessage(chat_id, msg)
-            return
-
-        img_path = self.helpers['petcam'].save_dir + "/" + name
-        print('[+][telebot] showing image: ' + img_path)
-
-        with open(img_path, 'rb') as img:
-            self.bot.sendPhoto(chat_id, img, caption=name, reply_markup = self.keyboard)
         
 
 
@@ -154,20 +166,23 @@ class Telebot:
     def send_last_snap(self, chat_id):
         """Retrieves and sends the latest snapshot."""
 
-        # get latest snapshot filename
-        filename = self.helpers['petcam'].last_snap
-        
-        # could be None if we've just started
-        if filename == None:
+        try:
+            # get latest snapshot filename
+            filename = self.helpers['petcam'].last_snap
+            # open iamge and send
+            with open(filename, 'rb') as img:
+                msg = '[i] ' + str(filename)
+                self.bot.sendPhoto(chat_id, img, caption=msg)
+        except Exception as err:
+            print(err)
             msg = '[i] no photos taken yet, please try again later or request a new /photo'
             self.bot.sendMessage(chat_id, msg)
-            return
-
-        # open iamge and send
-        with open(filename, 'rb') as img:
-            msg = '[i] ' + str(filename)
-            self.bot.sendPhoto(chat_id, img, caption=msg)
     
+    def send_video_lapse(self, chat_id):
+        vid_path = self.helpers['petcam'].snaps_to_video()
+        with open (vid_path, 'rb') as video:
+            self.bot.sendVideo(chat_id, video, caption = vid_path)
+         
 
     def shutdown_now(self, chat_id):
         """Shuts down device immediately."""
@@ -177,17 +192,40 @@ class Telebot:
         sleep(2)
         os.system('sudo nohup shutdown now')
 
-    def update_recipients(self, message='[!] message empty error', img_path=''):
+    
+    def snap_check_update(self):
+    
+        current_datetime = self.helpers['timelapser'].last_datetime
+
+        # snap photo
+        filename =  self.helpers['petcam'].snap(
+                current_datetime,
+                self.helpers['timelapser'].light_outside(),
+                )
+
+        # classify image
+        result = self.helpers['classifier'].classify_image(img_path=filename)
+
+        # update our records of what was spotted when
+        # and notify recipients if there has been a state change
+        message = self.helpers['tracker'].check_state_change(result, current_datetime)
+        try:
+            telebot.update_recipients(img_path=filename, message=message)
+        except Exception as err:
+            print(err)
+            print('[+] no change')
+
+    def update_recipients(self, message='[!] message empty error', img_path=None):
         """Send a message (optionally an image) to every recipient in turn."""
         print('[+][telebot] preparing to send message to all recipients:')
-        print("" + message)
+        print(message)
 
         # loop over recipients
         for rec in self.recipients:
             print("[+][telebot] updating " + rec)
             
             # if no image path was supplied just text the user
-            if img_path == '':
+            if img_path is None:
                 self.bot.sendMessage(rec, message)
             # if an image path is supplied, load the image and send
             # yes we need to open the image for each sendd - known issue
@@ -211,7 +249,9 @@ class Telebot:
 
         # open image and send
         with open(filename, 'rb') as image:
-            self.bot.sendPhoto(chat_id, image)
+            self.bot.sendPhoto(chat_id, image, caption = filename)
+        
+        print('[+] sent photo')
 
     def report_last_seen(self, chat_id, state="dummy"):
         """When was a state last seen? usage: /lastseen state"""
@@ -229,7 +269,6 @@ class Telebot:
             else:
                 reply = "[i] last saw " + state + " at " + lastseen_datetime.strftime("%H:%M:%S")
         
-        # this can happen if the class is not in tracker's dict
         except KeyError:
             reply = "[!] invalid class provided"
 
@@ -264,7 +303,7 @@ class Telebot:
             self.bot.sendMessage(chat_id, msg)
         else: 
             msg = '[+] starting main loop'
-            threading.Thread(target=self.helpers['timelapser'].loop).start()
+            threading.Thread(target=self.helpers['timelapser'].loop(self.snap_check_update)).start()
             self.update_recipients(message=msg)
     
     def stop_timelapser_loop(self, chat_id):
