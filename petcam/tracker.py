@@ -2,7 +2,7 @@
 class Tracker:
 
     def __init__(self, classes):
-        print('\t[+] initialised tracker instance')
+        print('[+][tracker] initialised tracker instance')
         
         # dummy state before first photo is classified
         self.last_state = "unknown"

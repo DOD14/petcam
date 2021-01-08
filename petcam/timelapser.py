@@ -5,7 +5,7 @@ from time import sleep
 
 class Timelapser:
 
-    def __init__(self, city, sleep_interval, loop_func):
+    def __init__(self, city, sleep_interval):
 
         print('[+][timelapser] initialised timelapser instance')
 
@@ -16,8 +16,6 @@ class Timelapser:
         # so we know if there's light outside
         self.update_sun()
 
-        # function to run inside loop()
-        self.loop_func = loop_func
         self.loop_running = False 
 
         # set how long to sleep between calls to loop_func
@@ -36,20 +34,16 @@ class Timelapser:
 
     def light_outside(self):
         """Returns True if the latest datetime in the main loop is between sunrise and sunset, False otherwise."""
-        
-        if self.last_datetime in self.today_light:
-            return True
-        else:
-            return False
-    
-    def loop(self):
+        return True if self.last_datetime in self.today_light else False
+   
+
+    def loop(self, func):
         """The main purpose of this class: runs a given function in a loop, but keeping track of day and night for camera setup and image processing purposes."""
         print('[+][timelapser] starting timelapser loop')
         self.loop_running = True
 
         # one iteration per day
         while self.loop_running: 
-            print("[+][timelapser] it's a new day")
 
             # update the day and the sunrise/sunset times
             self.today = self.now().day
@@ -57,13 +51,15 @@ class Timelapser:
             
             # initialise latest datetime for nested loop
             self.last_datetime = self.now()
+            
+            print("[+][timelapser] it's " + self.last_datetime.strftime('%A'))
 
             # as many iterations in a day as sleep_interval allows
             while self.loop_running and self.last_datetime.day == self.today:                 
                 
                 # do custom stuff! 
-                print('[+][timelapser] about to call loop_func')
-                self.loop_func()
+                print('[+][timelapser] about to call func()')
+                func()
 
 
                 # stop command allows current iteration to finish
