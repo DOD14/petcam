@@ -7,6 +7,7 @@ A collection of python scripts that use the Raspberry Pi Camera and Telegram Mes
 * [Installation](#installation)
 * [Configuration](#configuration)
 * [Training the classifier](#training-the-classifier)
+* [To do](#to-do)
 
 ## Summary of Features
 Before launching the main script, you train a custom linear regression model on a collection of images (see [Training the classifier](#training-the-classifier). For me that means gathering some photos of my cat's basket when it is occupied or empty. The trained model then has two classes: 'cat' and 'empty'.
@@ -111,3 +112,9 @@ dataset -- cat
 Then train the model specifying your config file:
 
 ``` python3 petcam/train_model.py -c config.txt```
+
+
+** To do
+* add motion detection
+* make classification/updates optional
+* find a way to display commands nicely (multi-column, emoji?)
