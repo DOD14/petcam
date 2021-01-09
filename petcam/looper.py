@@ -29,10 +29,10 @@ class Looper:
         while self.loop_running: 
 
             # update the sunrise/sunset times for today
-            sundial.update_sun()
+            self.sundial.update_sun()
 
             # initialise latest datetime for nested loop
-            self.last_datetime = sundial.now()
+            self.last_datetime = self.sundial.now()
             today = self.last_datetime.day
 
             print("[+][looper] it's " + self.last_datetime.strftime('%A'))
@@ -55,6 +55,6 @@ class Looper:
                 sleep(self.sleep_interval)
 
                 # update last_datetime to check if a new day has started
-                self.last_datetime = sundial.now()
+                self.last_datetime = self.sundial.now()
 
         print('[+][looper] loop ended')
