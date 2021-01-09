@@ -3,9 +3,10 @@ import configparser
 from time import sleep
 
 from petcam.classifier import Classifier
+from petcam.looper import Looper
 from petcam.petcam import Petcam
+from petcam.sundial import Sundial
 from petcam.telebot import Telebot
-from petcam.timelapser import Timelapser
 from petcam.tracker import Tracker
 
 # use argparse to get the config file
@@ -32,16 +33,19 @@ petcam = Petcam(img_save_dir = config['petcam']['img_save_dir'],
         brightness_threshold = float(config['petcam']['brightness_threshold']),
         brighten_factor = float(config['petcam']['brighten_factor'])
         )
-timelapser = Timelapser(city = config['timelapser']['city'],
-        sleep_interval = config['timelapser']['sleep_interval'],
+sundial = Sundial(city = config['sundial']['city'])
+looper = Looper(
+        sleep_interval = config['looper']['sleep_interval'],
+        sundial = sundial
         )
 tracker = Tracker(classes = classifier.classes)
 telebot = Telebot(token = config['telebot']['token'], 
         recipients = config['telebot']['recipients'].split(","),
         helpers = {'classifier': classifier,
             'petcam': petcam,
-            'timelapser': timelapser,
-            'tracker': tracker
+            'looper': looper,
+            'tracker': tracker,
+            'sundial': sundial
             }
         )
 

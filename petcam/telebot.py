@@ -23,30 +23,39 @@ class Telebot:
 
         # each command keyword corresponds to a function
         self.cmd_dict = { 
-                "/update": self.status_update,
-                "/photo": self.snap_and_send,
-                "/lastseen": self.report_last_seen,
-                "/lastsnap": self.send_last_snap,
-                "/lapse": self.send_video_lapse,
-                "/startloop": self.start_timelapser_loop,
                 "/browse": self.browse_snaps,
                 "/classes": self.list_classes,
                 "/debug": self.dump_info,
                 "/exitscript": self.exit_script,
                 "/help": self.default_reply,
+                "/lapse": self.send_video_lapse,
+                "/lastseen": self.report_last_seen,
+                "/lastsnap": self.send_last_snap,
+                "/photo": self.snap_and_send,
                 "/show": self.show_img,
                 "/shutdown": self.shutdown_now,
-                "/stop": self.stop_timelapser_loop
+                "/startloop": self.start_looper,
+                "/stoploop": self.stop_looper_loop,
+                "/update": self.status_update
                 }
         
         # construct a custom keyboard from our list of commands
         # then the user just has to press  buttons
-        buttons = [[KeyboardButton(text=cmd)] for cmd in self.cmd_dict.keys()]
+        
+        cmds = sorted(self.cmd_dict.keys())
+        print('[debug] len: ' + str(len(cmds)))
+        print('[debug] cmds: ' + str(cmds))
+
+        left_col = cmds[:len(cmds)//2]
+        right_col = cmds[len(cmds)//2:]
+        buttons = [[KeyboardButton(text=left),
+                    KeyboardButton(text=right)
+                ] for left, right in zip(left_col, right_col)]
         self.keyboard = ReplyKeyboardMarkup(keyboard=buttons)
         
         # let everyone now bot is up and running
         msg = '[+] bot activated! use /startloop to begin tracking or /help for a list of available commands'
-        self.update_recipients(message=msg)
+        self.update_recipients(message=msg, reply_markup=self.keyboard)
         
         atexit.register(self.exit_forced)
 
@@ -55,20 +64,21 @@ class Telebot:
         
     def browse_snaps(self, chat_id):
         """Browse snapshots taken so far in current script run by name."""
+
         # construct inline keyboard based on snapshot filenames
-        if len(self.helpers['petcam'].snaps) == 0:
+        try:
+            buttons = [[KeyboardButton(text='/show ' + name)] for name in self.helpers['petcam'].snaps]
+            keyboard = ReplyKeyboardMarkup(keyboard = buttons)
+            
+            # present user with keyboard
+            msg = '[+] pick a snapshot to view'
+            self.bot.sendMessage(chat_id, msg, reply_markup = keyboard)
+        
+        # if no snapshots taken yet 
+        except Exception as err:
+            print(err)
             msg = '[i] no snapshots yet, use /photo to take one or start the photo /loop' 
             self.bot.sendMessage(chat_id, msg)
-            return
-        
-        snaps_dir = self.helpers['petcam'].img_save_dir
-        filenames = [snap for snap in self.helpers['petcam'].snaps]
-        buttons = [[KeyboardButton(text='/show ' + name)] for name in filenames]
-        keyboard = ReplyKeyboardMarkup(keyboard = buttons)
-        
-        # present the user with keyboard
-        msg = '[+] pick a snapshot to view'
-        self.bot.sendMessage(chat_id, msg, reply_markup = keyboard)
    
 
     def default_reply(self, chat_id):
@@ -81,17 +91,25 @@ class Telebot:
     
         
     def exit_script(self, chat_id):
+        """Kills current process after notifying all recipients."""
+
+        # tell eveyone we're going offline
         msg = '[+] exiting script... bye!'
         self.update_recipients(message=msg)
+        
+        # mark last message as read to avoid death loop
+        # where bot keeps reading /exitscript on startup
         self.bot.getUpdates()
         sleep(5)
+
+        # finally kill process
         os.kill(os.getpid(), signal.SIGTERM)
 
-    
+   
     def exit_forced(self):
+        """Method registered with atexit, notifies users of script exit and sends default keyboard."""
         msg = '[!] exiting immediately because of an error'
-        print(msg)
-        self.update_recipients(message=msg)
+        self.update_recipients(message=msg, reply_markup = self.keyboard)
 
 
     def on_chat_message(self, msg):
@@ -129,6 +147,7 @@ class Telebot:
                 else:
                     print('[+][telebot] command args: '+ str(text[1:]))
                     self.cmd_dict[command](chat_id, *text[1:])
+
             except TypeError as err:
                 print(err)
                 msg = '[!] invalid number of arguments provided'
@@ -139,29 +158,30 @@ class Telebot:
                 self.cmd_dict['/help'](chat_id)
         except Exception as err:
             print(err)
-            msg = '[!] an error occurred while retrieving message text'
+            msg = '[!] an error occurred while processing command'
             self.bot.sendMessage(chat_id, msg)
 
-    def show_img(self, chat_id, name):
+    def show_img(self, chat_id, img_path):
+        """Loads image with given filename and sends it."""
         
+        # if no snapshots yet notify user
         if len(self.helpers['petcam'].snaps) == 0:
             msg = '[i] no snapshots yet, use /photo to take one or start the photo /loop' 
             self.bot.sendMessage(chat_id, msg)
             return
 
         try:
-            img_path = self.helpers['petcam'].img_save_dir + "/" + name
             print('[+][telebot] showing image: ' + img_path)
-
+            
+            # open image and send
             with open(img_path, 'rb') as img:
-                self.bot.sendPhoto(chat_id, img, caption=name, reply_markup = self.keyboard)
+                self.bot.sendPhoto(chat_id, img, caption="[i]" + img_path, reply_markup = self.keyboard)
+
         except FileNotFoundError as err:
             print(err)
             msg = '[!] invalid filename, please use /browse to see available snapshots'
             self.bot.sendMessage(chat_id, msg)
         
-
-
 
     def send_last_snap(self, chat_id):
         """Retrieves and sends the latest snapshot."""
@@ -169,16 +189,20 @@ class Telebot:
         try:
             # get latest snapshot filename
             filename = self.helpers['petcam'].last_snap
-            # open iamge and send
+            # open image and send
             with open(filename, 'rb') as img:
                 msg = '[i] ' + str(filename)
                 self.bot.sendPhoto(chat_id, img, caption=msg)
+
         except Exception as err:
             print(err)
             msg = '[i] no photos taken yet, please try again later or request a new /photo'
             self.bot.sendMessage(chat_id, msg)
     
     def send_video_lapse(self, chat_id):
+        """Produces a timelapse video from all snapshots and sends it."""
+        
+        # get video path, open, send
         vid_path = self.helpers['petcam'].snaps_to_video()
         with open (vid_path, 'rb') as video:
             self.bot.sendVideo(chat_id, video, caption = vid_path)
@@ -186,21 +210,30 @@ class Telebot:
 
     def shutdown_now(self, chat_id):
         """Shuts down device immediately."""
+        
+        # let everyone know
         msg = '[+] shutting down... bye!'
         self.update_recipients(message=msg)
+
+        # mark last message as read to prevent death loop
         self.bot.getUpdates()
-        sleep(2)
+        sleep(5)
+
+        # issue shutdown command
         os.system('sudo nohup shutdown now')
 
     
     def snap_check_update(self):
-    
-        current_datetime = self.helpers['timelapser'].last_datetime
-
+        """Take photo, classify it, notify user of changes.""" 
+        
+        # this will be used to determine sun position and timestamp
+        current_datetime = self.helpers['looper'].last_datetime
+        name = current_datetime.strftime("%d-%m-%y+%H:%M:%S") + ".jpg"
+        
         # snap photo
-        filename =  self.helpers['petcam'].snap(
-                current_datetime,
-                self.helpers['timelapser'].light_outside(),
+        img_path =  self.helpers['petcam'].snap(
+                name = name,
+                light_outside = self.helpers['sundial'].light_outside(),
                 )
 
         # classify image
@@ -215,7 +248,8 @@ class Telebot:
             print(err)
             print('[+] no change')
 
-    def update_recipients(self, message='[!] message empty error', img_path=None):
+
+    def update_recipients(self, message='[!] message empty error', img_path=None, reply_markup = None):
         """Send a message (optionally an image) to every recipient in turn."""
         print('[+][telebot] preparing to send message to all recipients:')
         print(message)
@@ -226,26 +260,35 @@ class Telebot:
             
             # if no image path was supplied just text the user
             if img_path is None:
-                self.bot.sendMessage(rec, message)
+                self.bot.sendMessage(rec, message, reply_markup = reply_markup)
             # if an image path is supplied, load the image and send
             # yes we need to open the image for each sendd - known issue
             else:
                 with open(img_path, 'rb') as image:
-                    self.bot.sendPhoto(rec, image, caption=message)
+                    self.bot.sendPhoto(rec, image, caption=message, reply_markup = reply_markup)
 
 
     def status_update(self, chat_id):
         """Messages information about the latest snapshot."""
 
-        reply = "[i] last status: " + self.helpers['tracker'].last_state + " at " + self.helpers['timelapser'].last_datetime.strftime("%H:%M:%S")
+        try: 
+            reply = "[i] last status: " + self.helpers['tracker'].last_state + " at " + self.helpers['looper'].last_datetime.strftime("%H:%M:%S")
+        except AttributeError as err:
+            print(err)
+            reply = "[i] loop not yet started, use /startloop" 
+        
         self.bot.sendMessage(chat_id, reply)
 
     def snap_and_send(self, chat_id):
         """Sends a photo on demand."""
         self.bot.sendMessage(chat_id, "[i] taking photo")
-
+        name = self.helpers['sundial'].now().strftime("%d-%m-%y+%H:%M:%S") + ".jpg" 
+        
         # timestamp is now rather than latest to avoid overwrites
-        filename = self.helpers['petcam'].snap(self.helpers['timelapser'].now(), self.helpers['timelapser'].light_outside())
+        filename = self.helpers['petcam'].snap(
+                name = name,
+                light_outside = self.helpers['sundial'].light_outside()
+                )
 
         # open image and send
         with open(filename, 'rb') as image:
@@ -256,7 +299,9 @@ class Telebot:
     def report_last_seen(self, chat_id, state="dummy"):
         """When was a state last seen? usage: /lastseen state"""
         
+        # defualt is to send standard command keyboard
         keyboard = self.keyboard
+
         try:
             # find out from tracker when a state was last spotted 
             lastseen_datetime = self.helpers['tracker'].last_seen[state]
@@ -272,7 +317,7 @@ class Telebot:
         except KeyError:
             reply = "[!] invalid class provided"
 
-            # construct keyboard with available classes
+            # construct override keyboard with available classes
             buttons = [[KeyboardButton(text='/lastseen ' + state)] for state in self.helpers['classifier'].classes]
             keyboard = ReplyKeyboardMarkup(keyboard=buttons)
         
@@ -296,21 +341,21 @@ class Telebot:
 
         self.bot.sendMessage(chat_id, message)
 
-    def start_timelapser_loop(self, chat_id):
-        """Start timelapser loop."""
-        if self.helpers['timelapser'].loop_running:
+    def start_looper(self, chat_id):
+        """Start looper loop."""
+        if self.helpers['looper'].loop_running:
             msg = '[!] loop already running'
             self.bot.sendMessage(chat_id, msg)
         else: 
             msg = '[+] starting main loop'
-            threading.Thread(target=self.helpers['timelapser'].loop(self.snap_check_update)).start()
+            threading.Thread(target=self.helpers['looper'].loop(self.snap_check_update)).start()
             self.update_recipients(message=msg)
     
-    def stop_timelapser_loop(self, chat_id):
-        """Stop timelapser loop."""
-        if self.helpers['timelapser'].loop_running:
+    def stop_looper_loop(self, chat_id):
+        """Stop looper loop."""
+        if self.helpers['looper'].loop_running:
             msg = '[+] stopping main loop'
-            self.helpers['timelapser'].loop_running = False
+            self.helpers['looper'].loop_running = False
             self.update_recipients(message=msg)
         else: 
             msg = '[!] loop is not running'
