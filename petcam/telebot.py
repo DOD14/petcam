@@ -1,4 +1,5 @@
 import atexit
+import emoji
 import os, signal
 from pathlib import Path
 import telepot, telepot.loop
@@ -20,7 +21,7 @@ class Telebot:
        
         # get a handle on helper classes 
         self.helpers = helpers
-
+        
         # each command keyword corresponds to a function
         self.cmd_dict = { 
                 "/browse": self.browse_snaps,
@@ -38,11 +39,27 @@ class Telebot:
                 "/stoploop": self.stop_looper_loop,
                 "/update": self.status_update
                 }
-        
+       
+        cmds = [
+                u'\U0001F50D' + "/browse",
+                u'\U0001F520' + "/classes",
+                u'\U00002705' + "/debug",
+                u'\U0001F6AA' + "/exitscript",
+                u'\U00002753' + "/help",
+                u'\U0001F3AC'+ "/lapse",
+                u'\U0001F440' + "/lastseen",
+                u'\U0001F5BC' + "/lastsnap",
+                u'\U0001F4F8' + "/photo",
+                u'\U0001F4C1' + "/show",
+                u'\U0001F534' "/shutdown",
+                u'\U000025B6' + "/startloop",
+                u'\U000023F8' + "/stoploop",
+                u'\U0001F504' + "/update"
+                ]
+
         # construct a custom keyboard from our list of commands
         # then the user just has to press  buttons
         
-        cmds = sorted(self.cmd_dict.keys())
         print('[debug] len: ' + str(len(cmds)))
         print('[debug] cmds: ' + str(cmds))
 
@@ -64,9 +81,9 @@ class Telebot:
         
     def browse_snaps(self, chat_id):
         """Browse snapshots taken so far in current script run by name."""
-
-        # construct inline keyboard based on snapshot filenames
-        try:
+        
+        if len(self.helpers['petcam'].snaps) > 0:
+            # construct inline keyboard based on snapshot filenames
             buttons = [[KeyboardButton(text='/show ' + name)] for name in self.helpers['petcam'].snaps]
             keyboard = ReplyKeyboardMarkup(keyboard = buttons)
             
@@ -75,8 +92,7 @@ class Telebot:
             self.bot.sendMessage(chat_id, msg, reply_markup = keyboard)
         
         # if no snapshots taken yet 
-        except Exception as err:
-            print(err)
+        else:
             msg = '[i] no snapshots yet, use /photo to take one or start the photo /loop' 
             self.bot.sendMessage(chat_id, msg)
    
@@ -133,6 +149,9 @@ class Telebot:
             text = msg['text']
             print('[+][telebot] received text: ' + text)
             
+            # ignore anything before /command"
+            text = "/" + text.split("/", 1)[1]
+
             # the first word in the received message should be a command
             text = text.split(" ")
             command = text[0]
@@ -237,7 +256,7 @@ class Telebot:
                 )
 
         # classify image
-        result = self.helpers['classifier'].classify_image(img_path=filename)
+        result = self.helpers['classifier'].classify_image(img_path=img_path)
 
         # update our records of what was spotted when
         # and notify recipients if there has been a state change
