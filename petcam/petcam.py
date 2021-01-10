@@ -62,7 +62,7 @@ class Petcam:
 
             # auto adjust in daylight
             else:
-                sleep(2)
+                sleep(5)
             
             # actually capture the photo!
             cam.capture(img_path)

@@ -17,8 +17,11 @@ class Classifier:
             self.classes = self.model.classes_
 
 
-    def extract_hog_fd(self, img_path):
+    def extract_hog_fd(self, img_path, resize_shape):
         """Loads an image from path img_path, applies some pre-processing including resizing to shape resize_shape, and returns its HOG feature descriptor."""
+       
+        # apply defaults if not supplied
+        resize_shape = resize_shape or self.resize_shape
         
         # load image
         img = cv2.imread(img_path)
@@ -27,7 +30,7 @@ class Classifier:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # resize to desired dimensions 
-        img = cv2.resize(img, self.resize_shape)
+        img = cv2.resize(img, resize_shape)
 
         # extract HOG feature descriptor
         hog_fd = hog(img, orientations = 9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), transform_sqrt=True, block_norm='L2-Hys')
@@ -35,9 +38,12 @@ class Classifier:
         return hog_fd 
 
 
-    def classify_image(self, img_path, resize_shape=(128, 128)):
+    def classify_image(self, img_path, resize_shape = None):
         """Takes a sklearn-trained model and uses it to classify the image located at img_path; note that pre-processing requires resizing to resize_shape."""
         
+        # apply defaults if not supplied
+        resize_shape = resize_shape or self.resize_shape
+
         print('[+][classifier] preparing to classify image: ' + img_path)
 
         # get HOG feature vector

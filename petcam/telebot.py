@@ -262,7 +262,7 @@ class Telebot:
         # and notify recipients if there has been a state change
         message = self.helpers['tracker'].check_state_change(result, current_datetime)
         try:
-            telebot.update_recipients(img_path=filename, message=message)
+            self.update_recipients(img_path=img_path, message=message)
         except Exception as err:
             print(err)
             print('[+] no change')
