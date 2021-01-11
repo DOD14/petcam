@@ -1,5 +1,4 @@
 import atexit
-import emoji
 import os, signal
 from pathlib import Path
 import telepot, telepot.loop
@@ -10,8 +9,10 @@ import threading
 class Telebot:
 
     def __init__(self, token, recipients, helpers):
-        print('[+][telebot] initialised telebot instance')
-       
+        print('[+][telebot] initialised telebot instance') 
+        with open('proc_num.txt', 'w') as out:
+            out.write(str(os.getpid()))
+
         # initialise a Telegram bot with given token
         self.bot = telepot.Bot(token)
 
@@ -35,6 +36,9 @@ class Telebot:
                 "/photo": self.snap_and_send,
                 "/show": self.show_img,
                 "/shutdown": self.shutdown_now,
+                "/startmotion": self.pre_start_motion,
+                "/motion": self.start_motion,
+                "/stopmotion": self.stop_motion,
                 "/startloop": self.start_looper,
                 "/stoploop": self.stop_looper_loop,
                 "/update": self.status_update
@@ -54,15 +58,14 @@ class Telebot:
                 u'\U0001F534' "/shutdown",
                 u'\U000025B6' + "/startloop",
                 u'\U000023F8' + "/stoploop",
+                u'\U0001F43E' + "/startmotion",
+                u'\U0001F6AB' + "/stopmotion",
                 u'\U0001F504' + "/update"
                 ]
 
         # construct a custom keyboard from our list of commands
         # then the user just has to press  buttons
         
-        print('[debug] len: ' + str(len(cmds)))
-        print('[debug] cmds: ' + str(cmds))
-
         left_col = cmds[:len(cmds)//2]
         right_col = cmds[len(cmds)//2:]
         buttons = [[KeyboardButton(text=left),
@@ -75,6 +78,7 @@ class Telebot:
         self.update_recipients(message=msg, reply_markup=self.keyboard)
         
         atexit.register(self.exit_forced)
+        signal.signal(signal.SIGUSR1, self.on_motion_capture)
 
         # start listening for incoming messages
         telepot.loop.MessageLoop(self.bot, self.on_chat_message).run_as_thread(relax=2)
@@ -262,13 +266,13 @@ class Telebot:
         # and notify recipients if there has been a state change
         message = self.helpers['tracker'].check_state_change(result, current_datetime)
         try:
-            self.update_recipients(img_path=img_path, message=message)
+            self.update_recipients(media=Path(img_path), message=message)
         except Exception as err:
             print(err)
             print('[+] no change')
 
 
-    def update_recipients(self, message='[!] message empty error', img_path=None, reply_markup = None):
+    def update_recipients(self, message='[!] message empty error', media=None, reply_markup = None):
         """Send a message (optionally an image) to every recipient in turn."""
         print('[+][telebot] preparing to send message to all recipients:')
         print(message)
@@ -278,13 +282,16 @@ class Telebot:
             print("[+][telebot] updating " + rec)
             
             # if no image path was supplied just text the user
-            if img_path is None:
+            if media is None:
                 self.bot.sendMessage(rec, message, reply_markup = reply_markup)
             # if an image path is supplied, load the image and send
             # yes we need to open the image for each sendd - known issue
             else:
-                with open(img_path, 'rb') as image:
-                    self.bot.sendPhoto(rec, image, caption=message, reply_markup = reply_markup)
+                with media.open(mode='rb') as content:
+                    if media.suffix in ['.jpg', '.png']:
+                        self.bot.sendPhoto(rec, content, caption=message, reply_markup = reply_markup)
+                    elif media.suffix() in ['.mkv', '.mp4', '.avi']:
+                        self.bot.sendVideo(rec, content, caption=message, reply_markup = reply_markup)
 
 
     def status_update(self, chat_id):
@@ -378,5 +385,40 @@ class Telebot:
             self.update_recipients(message=msg)
         else: 
             msg = '[!] loop is not running'
+            self.bot.sendMessage(chat_id, msg)
+    
+    def pre_start_motion(self, chat_id):
+        
+        # ask user which config file to use
+        msg = '[+] choose a motion config file:'
+
+        # provide keyboard with options
+        buttons = [[KeyboardButton(text='/motion ' + str(conf_file))] for conf_file in self.helpers['motion_manager'].motion_conf_files]
+        keyboard = ReplyKeyboardMarkup(keyboard = buttons)
+
+        # actually send message
+        self.bot.sendMessage(chat_id, msg, reply_markup = keyboard)
+
+    def start_motion(self, chat_id, conf_file_path):
+        
+        if not self.helpers['motion_manager'].motion_running:
+            self.helpers['motion_manager'].start_motion(conf_file_path)
+            self.update_recipients(message = '[+] started motion service: http://192.168.100.57:8081', reply_markup = self.keyboard)
+        else:
+            msg = '[!] motion service already running'
+            self.bot.sendMessage(chat_id, msg, reply_markup = self.keyboard)
+    
+    def on_motion_capture(self, sig_num, frame):
+        print('[+] received signal: ' + str(sig_num))
+        msg = '[!] motion detected: '
+        for capture in self.helpers['motion_manager'].get_new_captures():
+            self.update_recipients(message = msg + capture.name, media = capture)
+
+    def stop_motion(self, chat_id):
+        if self.helpers['motion_manager'].motion_running:
+            self.helpers['motion_manager'].stop_motion()
+            self.update_recipients(message = '[+] stopped motion service')
+        else:
+            msg = '[!] motion service was not running'
             self.bot.sendMessage(chat_id, msg)
 

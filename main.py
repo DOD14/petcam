@@ -4,6 +4,7 @@ from time import sleep
 
 from petcam.classifier import Classifier
 from petcam.looper import Looper
+from petcam.motion_manager import MotionManager
 from petcam.petcam import Petcam
 from petcam.sundial import Sundial
 from petcam.telebot import Telebot
@@ -19,9 +20,9 @@ config = configparser.ConfigParser()
 config.read(args['config'])
 
 # instantiate helper classes
+
 classifier = Classifier(model_path = config['classifier']['model_path'],
         resize_shape = tuple([int(x) for x in config['classifier']['resize_shape'].split(",")]),
- 
         )
 petcam = Petcam(img_save_dir = config['petcam']['img_save_dir'],
         vid_save_dir = config['petcam']['vid_save_dir'],
@@ -39,16 +40,20 @@ looper = Looper(
         sundial = sundial
         )
 tracker = Tracker(classes = classifier.classes)
+motion_manager = MotionManager(
+        motion_conf_dir = config['motion']['motion_conf_dir'],
+        motion_save_dir = config['motion']['motion_save_dir']
+        )
 telebot = Telebot(token = config['telebot']['token'], 
         recipients = config['telebot']['recipients'].split(","),
         helpers = {'classifier': classifier,
             'petcam': petcam,
+            'motion_manager': motion_manager,
             'looper': looper,
             'tracker': tracker,
             'sundial': sundial
             }
         )
-
 
 # telebot will handle everything, just keep it alive
 while True:
