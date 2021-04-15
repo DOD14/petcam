@@ -403,7 +403,7 @@ class Telebot:
         
         if not self.helpers['motion_manager'].motion_running:
             self.helpers['motion_manager'].start_motion(conf_file_path)
-            self.update_recipients(message = '[+] started motion service: http://192.168.100.57:8081', reply_markup = self.keyboard)
+            self.update_recipients(message = '[+] started motion service', reply_markup = self.keyboard)
         else:
             msg = '[!] motion service already running'
             self.bot.sendMessage(chat_id, msg, reply_markup = self.keyboard)
