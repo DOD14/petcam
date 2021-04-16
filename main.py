@@ -42,7 +42,8 @@ looper = Looper(
 tracker = Tracker(classes = classifier.classes)
 motion_manager = MotionManager(
         motion_conf_dir = config['motion']['motion_conf_dir'],
-        motion_save_dir = config['motion']['motion_save_dir']
+        image_save_dir = config['motion']['image_save_dir'],
+        video_save_dir = config['motion']['video_save_dir'],
         )
 telebot = Telebot(token = config['telebot']['token'], 
         recipients = config['telebot']['recipients'].split(","),

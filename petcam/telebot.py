@@ -74,7 +74,7 @@ class Telebot:
         self.keyboard = ReplyKeyboardMarkup(keyboard=buttons)
         
         # let everyone now bot is up and running
-        msg = '[+] bot activated! use /startloop to begin tracking or /help for a list of available commands'
+        msg = '[+] bot activated! use /help for a list of available commands'
         self.update_recipients(message=msg, reply_markup=self.keyboard)
         
         atexit.register(self.exit_forced)
@@ -277,22 +277,25 @@ class Telebot:
         print('[+][telebot] preparing to send message to all recipients:')
         print(message)
 
-        # loop over recipients
-        for rec in self.recipients:
-            print("[+][telebot] updating " + rec)
-            
-            # if no image path was supplied just text the user
-            if media is None:
-                self.bot.sendMessage(rec, message, reply_markup = reply_markup)
-            # if an image path is supplied, load the image and send
-            # yes we need to open the image for each sendd - known issue
-            else:
-                with media.open(mode='rb') as content:
-                    if media.suffix in ['.jpg', '.png']:
-                        self.bot.sendPhoto(rec, content, caption=message, reply_markup = reply_markup)
-                    elif media.suffix() in ['.mkv', '.mp4', '.avi']:
-                        self.bot.sendVideo(rec, content, caption=message, reply_markup = reply_markup)
-
+        try:
+           # loop over recipients
+            for rec in self.recipients:
+                print("[+][telebot] updating " + rec)
+                
+                # if no image path was supplied just text the user
+                if media is None:
+                    self.bot.sendMessage(rec, message, reply_markup = reply_markup)
+                # if an image path is supplied, load the image and send
+                # yes we need to open the image for each sendd - known issue
+                else:
+                    with media.open(mode='rb') as content:
+                        if media.suffix in ['.jpg', '.png']:
+                            self.bot.sendPhoto(rec, content, caption=message, reply_markup = reply_markup)
+                        elif media.suffix() in ['.mkv', '.mp4', '.avi']:
+                            self.bot.sendVideo(rec, content, caption=message, reply_markup = reply_markup)
+    
+        except:
+            pass
 
     def status_update(self, chat_id):
         """Messages information about the latest snapshot."""
@@ -395,6 +398,8 @@ class Telebot:
         # provide keyboard with options
         buttons = [[KeyboardButton(text='/motion ' + str(conf_file))] for conf_file in self.helpers['motion_manager'].motion_conf_files]
         keyboard = ReplyKeyboardMarkup(keyboard = buttons)
+        
+        print('[debug] keyboard: ' + str(keyboard))
 
         # actually send message
         self.bot.sendMessage(chat_id, msg, reply_markup = keyboard)
@@ -411,9 +416,17 @@ class Telebot:
     def on_motion_capture(self, sig_num, frame):
         print('[+] received signal: ' + str(sig_num))
         msg = '[!] motion detected: '
-        for capture in self.helpers['motion_manager'].get_new_captures():
-            self.update_recipients(message = msg + capture.name, media = capture)
-
+        
+        # I decided to use 10 for on_picture_save/on_event_start
+        if sig_num == 10:
+            for capture in self.helpers['motion_manager'].get_new_captures():
+                self.update_recipients(message = msg + capture.name, media = capture)
+        
+        # 12 for movie end
+        elif sig_num == 12:
+            for video in self.helpers['motion_manager'].get_new_videos():
+                self.update_recipients(message = msg + video.name, media = video)
+        
     def stop_motion(self, chat_id):
         if self.helpers['motion_manager'].motion_running:
             self.helpers['motion_manager'].stop_motion()
