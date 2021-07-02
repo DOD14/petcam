@@ -1,13 +1,8 @@
 import argparse
 import configparser
+import importlib
 from time import sleep
-
-from petcam.classifier import Classifier
-from petcam.looper import Looper
-from petcam.petcam import Petcam
-from petcam.sundial import Sundial
 from petcam.telebot import Telebot
-from petcam.tracker import Tracker
 
 # use argparse to get the config file
 ap = argparse.ArgumentParser()
@@ -18,12 +13,12 @@ args = vars(ap.parse_args())
 config = configparser.ConfigParser()
 config.read(args['config'])
 
+
 # instantiate helper classes
-classifier = Classifier(model_path = config['classifier']['model_path'],
-        resize_shape = tuple([int(x) for x in config['classifier']['resize_shape'].split(",")]),
- 
-        )
-petcam = Petcam(img_save_dir = config['petcam']['img_save_dir'],
+helpers = {}
+
+if 'petcam' in config:
+    petcam = Petcam(img_save_dir = config['petcam']['img_save_dir'],
         vid_save_dir = config['petcam']['vid_save_dir'],
         resolution = tuple([int(x) for x in config['petcam']['resolution'].split(",")]),
         fps = int(config['petcam']['fps']),
@@ -33,20 +28,18 @@ petcam = Petcam(img_save_dir = config['petcam']['img_save_dir'],
         brightness_threshold = float(config['petcam']['brightness_threshold']),
         brighten_factor = float(config['petcam']['brighten_factor'])
         )
-sundial = Sundial(city = config['sundial']['city'])
-looper = Looper(
-        sleep_interval = config['looper']['sleep_interval'],
-        sundial = sundial
+    helpers['petcam'] = petcam
+
+if 'classifier' in config:
+    classifier = Classifier(model_path = config['classifier']['model_path'],
+        resize_shape = tuple([int(x) for x in config['classifier']['resize_shape'].split(",")]),
         )
-tracker = Tracker(classes = classifier.classes)
+    helpers['classifier'] = classifier
+
+
 telebot = Telebot(token = config['telebot']['token'], 
         recipients = config['telebot']['recipients'].split(","),
-        helpers = {'classifier': classifier,
-            'petcam': petcam,
-            'looper': looper,
-            'tracker': tracker,
-            'sundial': sundial
-            }
+        helpers = helpers
         )
 
 
