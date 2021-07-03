@@ -2,6 +2,7 @@ import argparse
 import configparser
 import importlib
 from time import sleep
+
 from petcam.telebot import Telebot
 
 # use argparse to get the config file
@@ -17,25 +18,16 @@ config.read(args['config'])
 # instantiate helper classes
 helpers = {}
 
-if 'petcam' in config:
-    petcam = Petcam(img_save_dir = config['petcam']['img_save_dir'],
-        vid_save_dir = config['petcam']['vid_save_dir'],
-        resolution = tuple([int(x) for x in config['petcam']['resolution'].split(",")]),
-        fps = int(config['petcam']['fps']),
-        iso = int(config['petcam']['iso']),
-        shutter_speed = int(config['petcam']['shutter_speed']),
-        awb_mode = config['petcam']['awb_mode'],
-        brightness_threshold = float(config['petcam']['brightness_threshold']),
-        brighten_factor = float(config['petcam']['brighten_factor'])
-        )
-    helpers['petcam'] = petcam
-
-if 'classifier' in config:
-    classifier = Classifier(model_path = config['classifier']['model_path'],
-        resize_shape = tuple([int(x) for x in config['classifier']['resize_shape'].split(",")]),
-        )
-    helpers['classifier'] = classifier
-
+if 'media_handler' in config:
+    from petcam.media_handler import MediaHandler
+    helpers['media_handler'] = MediaHandler(img_save_dir = config['media_handler']['img_save_dir'],
+            vid_save_dir = config['media_handler']['vid_save_dir'],
+            mode = config['media_handler']['mode'],
+            save_photos = config['media_handler'].getboolean('save_photos'),
+            adjust_gamma = config['media_handler'].getboolean('adjust_gamma'),
+            video_fps = int(config['media_handler']['fps']),
+            resolution = tuple([int(x) for x in config['media_handler']['resolution'].split(",")])
+    )
 
 telebot = Telebot(token = config['telebot']['token'], 
         recipients = config['telebot']['recipients'].split(","),

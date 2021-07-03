@@ -1,9 +1,10 @@
 import atexit
-import emoji
 import os, signal
+from time import sleep
+
+import emoji
 import telepot, telepot.loop
 from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
-from time import sleep
 
 class Telebot:
 
@@ -20,9 +21,11 @@ class Telebot:
         # ensure cleanup function runs and notifies recipients if this crashes
         atexit.register(self.exit_script)
        
-        # get a handle on helper classes 
+        # get a handle on helper classes and provide them with a reference to this telebot
+        for helper in helpers.values():
+            helper.register_telebot(self)
         self.helpers = helpers
-        
+
         # get a list of commands from helpers to format as a keyboard with buttons
         self.construct_cmd_keyboard()
         
@@ -37,14 +40,19 @@ class Telebot:
     def construct_cmd_keyboard(self):
  # construct a dictionary of the form 'command: [helper, emoji]' by asking each helper for their own list of custom commands and putting these together
         cmd_dict = {} 
-        for helper in self.helpers:
-             cmd_dict = cmd_dict + helper.get_cmd_dict_entries()
+        for helper in self.helpers.values():
+            new_entries = helper.init_cmd_dict()
+            print('[debug] new_entries: ' + str(new_entries))
+            cmd_dict = {**cmd_dict, **new_entries}
+
+        print('[debug] dictionary: ' + str(cmd_dict))
+        #cmd_dict = sorted(cmd_dict)
         self.cmd_dict = cmd_dict
-        
+         
         # cmds = emoji + command text
-        cmds = [cmd_dict[key][1] + " " + str(key) for key in cmd_dict]
-        cmds.append(u'\U0001F534' "/shutdown")
-        cmds.append(u'\U0001F6AA' + "/exitscript")
+        cmds = [value[1] + " " + key for key, value in cmd_dict.items()]
+        #cmds.append(u'\U0001F534' "/shutdown")
+        cmds.append(u'\U0001F6AA' + "/exit-script")
         cmds = sorted(cmds)
 
         print('[debug] len: ' + str(len(cmds)))
@@ -67,7 +75,7 @@ class Telebot:
         self.update_recipients(message=msg)
         
         # mark last message as read to avoid death loop
-        # where bot keeps reading /exitscript on startup
+        # where bot keeps reading /exit-script on startup
         self.bot.getUpdates()
         sleep(5)
 
@@ -118,7 +126,7 @@ class Telebot:
             print('[+][telebot] command: ' + command)
            
             # handle these separately as they should work regardless of what helpers are loaded
-            if command == "/exitscript":
+            if command == "/exit-script":
                 self.exit_script()
             if command == "/shutdown":
                 self.shutdown_now()
