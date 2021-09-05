@@ -18,8 +18,8 @@ class MediaHandler(Helper):
         
         if mode == 'local':
             print(mode)
-            #from petcam import Petcam
-            #self.camera_src = Petcam()
+            from petcam import Petcam
+            self.camera_src = Petcam()
         elif mode == 'remote':
             from picam_server import SocketReceiver
             self.camera_src = SocketReceiver()
@@ -27,11 +27,7 @@ class MediaHandler(Helper):
         self.resolution = resolution
         self.fps = video_fps
 
-    def init_cmd_dict(self):
         self.cmd_dict = {'/take-photo':[self.show_photo, u'\U0001F4F8']}
-        cmd_dict_for_telebot = {key: [self, value[1]] for key, value in self.cmd_dict.items()}
-        print(str(cmd_dict_for_telebot))
-        return cmd_dict_for_telebot
 
     def _take_photo(self, name):
         # photo is compatible with cv2 operations

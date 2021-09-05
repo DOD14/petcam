@@ -41,7 +41,7 @@ class Telebot:
  # construct a dictionary of the form 'command: [helper, emoji]' by asking each helper for their own list of custom commands and putting these together
         cmd_dict = {} 
         for helper in self.helpers.values():
-            new_entries = helper.init_cmd_dict()
+            new_entries = helper.create_cmd_dict_for_telebot()
             print('[debug] new_entries: ' + str(new_entries))
             cmd_dict = {**cmd_dict, **new_entries}
 
